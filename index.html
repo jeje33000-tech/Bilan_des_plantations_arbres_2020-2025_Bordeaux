@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Swipe Avant/Après - Plusieurs couches Après</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" rel="stylesheet" />
+
+<style>
+  body { margin:0; padding:0; }
+  #before, #after { position:absolute; top:0; bottom:0; width:100%; }
+  .legend {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(255,255,255,0.85);
+    padding: 10px;
+    border-radius: 5px;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    max-width: 150px;
+  }
+  .legend div {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+  .legend span {
+    display: inline-block;
+    width: 20px;
+    height: 12px;
+    margin-right: 5px;
+  }
+</style>
+</head>
+<body>
+
+<div id="before"></div>
+<div id="after"></div>
+<div id="legend" class="legend"></div>
+
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
+
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoiamVqZTMzMDAwIiwiYSI6ImNtZTJ2c3RnaDAwczEyanF6bW9wODI0cTgifQ.AYOAKWDyDLP_fbKIz-QdwQ';
+
+
+// Fonction pour calculer bbox d'un GeoJSON
+function getGeoJSONBounds(geojson) {
+  const coords = [];
+
+  function extractCoords(geom) {
+    if (!geom) return;
+    if (geom.type === 'Point') {
+      coords.push(geom.coordinates);
+    } else if (geom.type === 'MultiPoint' || geom.type === 'LineString') {
+      geom.coordinates.forEach(c => coords.push(c));
+    } else if (geom.type === 'MultiLineString' || geom.type === 'Polygon') {
+      geom.coordinates.flat().forEach(c => coords.push(c));
+    } else if (geom.type === 'MultiPolygon') {
+      geom.coordinates.flat(2).forEach(c => coords.push(c));
+    }
+  }
+
+  if (geojson.type === 'FeatureCollection') {
+    geojson.features.forEach(f => extractCoords(f.geometry));
+  } else if (geojson.type === 'Feature') {
+    extractCoords(geojson.geometry);
+  } else {
+    extractCoords(geojson);
+  }
+
+  const lats = coords.map(c => c[1]);
+  const lngs = coords.map(c => c[0]);
+  const minLng = Math.min(...lngs);
+  const minLat = Math.min(...lats);
+  const maxLng = Math.max(...lngs);
+  const maxLat = Math.max(...lats);
+
+  return [[minLng, minLat], [maxLng, maxLat]];
+}
+
+// Fusionne plusieurs bbox en une bbox globale
+function mergeBounds(boundsArray) {
+  let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+  boundsArray.forEach(b => {
+    if (b[0][0] < minLng) minLng = b[0][0];
+    if (b[0][1] < minLat) minLat = b[0][1];
+    if (b[1][0] > maxLng) maxLng = b[1][0];
+    if (b[1][1] > maxLat) maxLat = b[1][1];
+  });
+  return [[minLng, minLat], [maxLng, maxLat]];
+}
+
+// Cartes avant et après
+const beforeMap = new mapboxgl.Map({
+  container: 'before',
+  style: 'mapbox://styles/mapbox/dark-v11',
+  center: [2.35, 48.86],
+  zoom: 12
+});
+const afterMap = new mapboxgl.Map({
+  container: 'after',
+  style: 'mapbox://styles/mapbox/dark-v11',
+  center: [2.35, 48.86],
+  zoom: 12
+});
+
+// Définition des couches avec leurs sources, id, couleurs et labels
+const layersInfo = [
+  { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Avant' },
+
+  // Deux couches Après différentes
+  { map: afterMap, id: 'apres1-layer', source: 'apres1', color: 'red', label: 'Après - Couche 1' },
+  { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Après - Couche 2' }
+];
+
+// Ajout des couches et construction de la légende
+function addLayerWithLegend(info) {
+  info.map.on('load', () => {
+    info.map.addSource(info.source, {
+      type: 'geojson',
+      data: info.source + '.geojson'  // Assure-toi d’avoir apres1.geojson et apres2.geojson en plus de avant.geojson
+    });
+    info.map.addLayer({
+      id: info.id,
+      type: 'fill',
+      source: info.source,
+      paint: {
+        'fill-color': info.color,
+        'fill-opacity': 0.5
+      }
+    });
+    createLegend();
+  });
+}
+
+// Générer la légende dynamique
+function createLegend() {
+  const legendDiv = document.getElementById('legend');
+  legendDiv.innerHTML = ''; // Reset
+  layersInfo.forEach(l => {
+    const item = document.createElement('div');
+    const colorBox = document.createElement('span');
+    colorBox.style.backgroundColor = l.color;
+    item.appendChild(colorBox);
+    item.appendChild(document.createTextNode(l.label));
+    legendDiv.appendChild(item);
+  });
+}
+
+// Ajouter toutes les couches
+layersInfo.forEach(addLayerWithLegend);
+
+// Barre de comparaison
+new mapboxgl.Compare(beforeMap, afterMap, '#before', {});
+</script>
+
+</body>
+</html>
