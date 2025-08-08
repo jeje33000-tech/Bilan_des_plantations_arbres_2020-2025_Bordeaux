@@ -87,7 +87,8 @@ const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
 // Positionne le slider complètement à gauche (après chargement des cartes)
 afterMap.on('load', () => {
   beforeMap.on('load', () => {
-    compare.setSliderPosition(1);
+    compare.setSliderPosition(0);
+    updateLabelsOpacity(compare.getSliderPosition());
   });
 });
 
@@ -144,21 +145,11 @@ function updateLabelsOpacity(position) {
   labelRight.style.opacity = 1 - position;     // Après visible quand slider vers gauche
 }
 
-// Initialisation opacité labels après chargement des cartes
-afterMap.on('load', () => {
-  beforeMap.on('load', () => {
-    compare.setSliderPosition(0);
-    updateLabelsOpacity(compare.getSliderPosition());
-  });
-});
-
-// Écoute du slider
-compare.on('slide', () => {
-  const position = compare.getSliderPosition();
-  updateLabelsOpacity(position);
+// Écoute du slider — utilise e.detail pour récupérer la position correcte
+compare.on('slide', (e) => {
+  updateLabelsOpacity(e.detail);
 });
 </script>
 
 </body>
 </html>
-
