@@ -95,6 +95,8 @@ function mergeBounds(boundsArray) {
 }
 
 // Cartes avant et après
+
+  const centerBordeaux = [-0.57918, 44.8378]
 const beforeMap = new mapboxgl.Map({
   container: 'before',
   style: 'mapbox://styles/mapbox/dark-v11',
@@ -161,6 +163,7 @@ new mapboxgl.Compare(afterMap,beforeMap, '#before', {});
 </body>
 
 </html>
+
 
 
 
