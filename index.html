@@ -98,14 +98,12 @@ function mergeBounds(boundsArray) {
 const beforeMap = new mapboxgl.Map({
   container: 'before',
   style: 'mapbox://styles/mapbox/dark-v11',
-  center: [2.35, 48.86],
-  zoom: 12
+  
 });
 const afterMap = new mapboxgl.Map({
   container: 'after',
   style: 'mapbox://styles/mapbox/dark-v11',
-  center: [2.35, 48.86],
-  zoom: 12
+  
 });
 
 // Définition des couches avec leurs sources, id, couleurs et labels
@@ -161,4 +159,5 @@ new mapboxgl.Compare(beforeMap, afterMap, '#before', {});
 </body>
 
 </html>
+
 
