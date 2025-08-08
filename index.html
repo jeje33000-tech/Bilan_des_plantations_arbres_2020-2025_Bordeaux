@@ -101,13 +101,22 @@ const beforeMap = new mapboxgl.Map({
   container: 'before',
   style: 'mapbox://styles/mapbox/dark-v11',
   center: centerBordeaux,
-  zoom: 15
+  zoom: 10
 });
 const afterMap = new mapboxgl.Map({
   container: 'after',
   style: 'mapbox://styles/mapbox/dark-v11',
 center: centerBordeaux,
-  zoom: 15
+  zoom: 10
+});
+
+  const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
+
+// Attend le chargement des 2 cartes puis positionne le slider
+afterMap.on('load', () => {
+  beforeMap.on('load', () => {
+    compare.setSliderPosition(0); // Barre complètement à gauche
+  });
 });
 
 // Définition des couches avec leurs sources, id, couleurs et labels
@@ -164,6 +173,7 @@ new mapboxgl.Compare(afterMap,beforeMap, '#before', {});
 </body>
 
 </html>
+
 
 
 
