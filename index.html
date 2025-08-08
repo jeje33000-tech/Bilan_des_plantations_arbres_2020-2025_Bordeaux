@@ -20,6 +20,7 @@
     font-family: Arial, sans-serif;
     font-size: 13px;
     max-width: 150px;
+    z-index: 1000;
   }
   .legend div {
     display: flex;
@@ -32,12 +33,32 @@
     height: 12px;
     margin-right: 5px;
   }
+  /* Styles labels Avant/Après */
+  #label-left, #label-right {
+    position: absolute;
+    top: 10px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.8);
+    font-weight: bold;
+    border-radius: 4px;
+    pointer-events: none;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    z-index: 1000;
+    transition: opacity 0.3s ease;
+  }
+  #label-left { left: 10px; }
+  #label-right { right: 10px; }
 </style>
 </head>
 <body>
 
 <div id="before"></div>
 <div id="after"></div>
+
+<div id="label-left">Avant 2015</div>
+<div id="label-right">Après 2015</div>
+
 <div id="legend" class="legend"></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
@@ -46,57 +67,8 @@
 <script>
 mapboxgl.accessToken = 'pk.eyJ1IjoiamVqZTMzMDAwIiwiYSI6ImNtZTJ2c3RnaDAwczEyanF6bW9wODI0cTgifQ.AYOAKWDyDLP_fbKIz-QdwQ';
 
+const centerBordeaux = [-0.57409, 44.861022];
 
-// Fonction pour calculer bbox d'un GeoJSON
-function getGeoJSONBounds(geojson) {
-  const coords = [];
-
-  function extractCoords(geom) {
-    if (!geom) return;
-    if (geom.type === 'Point') {
-      coords.push(geom.coordinates);
-    } else if (geom.type === 'MultiPoint' || geom.type === 'LineString') {
-      geom.coordinates.forEach(c => coords.push(c));
-    } else if (geom.type === 'MultiLineString' || geom.type === 'Polygon') {
-      geom.coordinates.flat().forEach(c => coords.push(c));
-    } else if (geom.type === 'MultiPolygon') {
-      geom.coordinates.flat(2).forEach(c => coords.push(c));
-    }
-  }
-
-  if (geojson.type === 'FeatureCollection') {
-    geojson.features.forEach(f => extractCoords(f.geometry));
-  } else if (geojson.type === 'Feature') {
-    extractCoords(geojson.geometry);
-  } else {
-    extractCoords(geojson);
-  }
-
-  const lats = coords.map(c => c[1]);
-  const lngs = coords.map(c => c[0]);
-  const minLng = Math.min(...lngs);
-  const minLat = Math.min(...lats);
-  const maxLng = Math.max(...lngs);
-  const maxLat = Math.max(...lats);
-
-  return [[minLng, minLat], [maxLng, maxLat]];
-}
-
-// Fusionne plusieurs bbox en une bbox globale
-function mergeBounds(boundsArray) {
-  let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
-  boundsArray.forEach(b => {
-    if (b[0][0] < minLng) minLng = b[0][0];
-    if (b[0][1] < minLat) minLat = b[0][1];
-    if (b[1][0] > maxLng) maxLng = b[1][0];
-    if (b[1][1] > maxLat) maxLat = b[1][1];
-  });
-  return [[minLng, minLat], [maxLng, maxLat]];
-}
-
-// Cartes avant et après
-
-  const centerBordeaux = [-0.57409, 44.861022]
 const beforeMap = new mapboxgl.Map({
   container: 'before',
   style: 'mapbox://styles/mapbox/dark-v11',
@@ -106,34 +78,32 @@ const beforeMap = new mapboxgl.Map({
 const afterMap = new mapboxgl.Map({
   container: 'after',
   style: 'mapbox://styles/mapbox/dark-v11',
-center: centerBordeaux,
+  center: centerBordeaux,
   zoom: 10
 });
 
-  const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
+const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
 
-// Attend le chargement des 2 cartes puis positionne le slider
+// Positionne le slider complètement à gauche (après chargement des cartes)
 afterMap.on('load', () => {
   beforeMap.on('load', () => {
-    compare.setSliderPosition(0); // Barre complètement à gauche
+    compare.setSliderPosition(0);
   });
 });
 
-// Définition des couches avec leurs sources, id, couleurs et labels
+// Couches avec sources, id, couleurs, labels
 const layersInfo = [
   { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Avant' },
-
-  // Deux couches Après différentes
-  { map: afterMap, id: 'apres1-layer', source: 'apres1', color: 'red', label: 'Nouvelle stations' },
+  { map: afterMap, id: 'apres1-layer', source: 'apres1', color: 'red', label: 'Nouvelles stations' },
   { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Stations densifiées' }
 ];
 
-// Ajout des couches et construction de la légende
+// Ajouter couches et légende
 function addLayerWithLegend(info) {
   info.map.on('load', () => {
     info.map.addSource(info.source, {
       type: 'geojson',
-      data: info.source + '.geojson'  // Assure-toi d’avoir apres1.geojson et apres2.geojson en plus de avant.geojson
+      data: info.source + '.geojson'
     });
     info.map.addLayer({
       id: info.id,
@@ -148,10 +118,9 @@ function addLayerWithLegend(info) {
   });
 }
 
-// Générer la légende dynamique
 function createLegend() {
   const legendDiv = document.getElementById('legend');
-  legendDiv.innerHTML = ''; // Reset
+  legendDiv.innerHTML = '';
   layersInfo.forEach(l => {
     const item = document.createElement('div');
     const colorBox = document.createElement('span');
@@ -162,22 +131,27 @@ function createLegend() {
   });
 }
 
-// Ajouter toutes les couches
 layersInfo.forEach(addLayerWithLegend);
 
-// Barre de comparaison
-new mapboxgl.Compare(afterMap,beforeMap, '#before', {});
-  compare.setSliderPosition(0);  // barre complètement à gauche
+// Labels pour l’animation
+const labelLeft = document.getElementById('label-left');
+const labelRight = document.getElementById('label-right');
+
+function updateLabelsOpacity(position) {
+  // position 0 = slider complètement à gauche (on voit la carte "après")
+  // position 1 = slider complètement à droite (on voit la carte "avant")
+  labelLeft.style.opacity = position;          // Avant visible quand slider vers droite
+  labelRight.style.opacity = 1 - position;     // Après visible quand slider vers gauche
+}
+
+// Initialisation des opacités
+updateLabelsOpacity(compare.getSliderPosition());
+
+// Écoute du glissement du slider
+compare.on('slide', (e) => {
+  updateLabelsOpacity(e.detail);
+});
 </script>
 
 </body>
-
 </html>
-
-
-
-
-
-
-
-
