@@ -101,13 +101,13 @@ const beforeMap = new mapboxgl.Map({
   container: 'before',
   style: 'mapbox://styles/mapbox/dark-v11',
   center: centerBordeaux,
-  zoom: 12
+  zoom: 15
 });
 const afterMap = new mapboxgl.Map({
   container: 'after',
   style: 'mapbox://styles/mapbox/dark-v11',
 center: centerBordeaux,
-  zoom: 12
+  zoom: 15
 });
 
 // Définition des couches avec leurs sources, id, couleurs et labels
@@ -158,11 +158,13 @@ layersInfo.forEach(addLayerWithLegend);
 
 // Barre de comparaison
 new mapboxgl.Compare(afterMap,beforeMap, '#before', {});
+  compare.setSliderPosition(0);  // barre complètement à gauche
 </script>
 
 </body>
 
 </html>
+
 
 
 
