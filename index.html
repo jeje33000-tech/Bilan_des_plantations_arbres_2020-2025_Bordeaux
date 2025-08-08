@@ -63,8 +63,8 @@
 <div id="before"></div>
 <div id="after"></div>
 
-<div id="label-left">Avant 2015</div>
-<div id="label-right">Après 2015</div>
+<div id="label-left">Avant 2020</div>
+<div id="label-right">Après 2020</div>
 
 <div id="legend" class="legend"></div>
 
@@ -101,12 +101,12 @@ afterMap.on('load', () => {
 
 // Définition des couches
 const layersAvant = [
-  { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2015' }
+  { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2020' }
 ];
 
 const layersApres = [
   { map: afterMap, id: 'apres1-layer', source: 'apres1', color: 'red', label: 'Nouvelles stations' },
-  { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Stations densifiées' },
+  { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Stations avec remplacements ou densifiées' },
   { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'green', label: 'Stations non plantées pendant le mandat' }
 ];
 
@@ -135,7 +135,7 @@ function createLegend() {
 
   // Bloc Avant
   const avantTitle = document.createElement('h4');
-  avantTitle.textContent = 'Avant';
+  avantTitle.textContent = 'Avant 2020';
   legendDiv.appendChild(avantTitle);
   layersAvant.forEach(l => {
     const item = document.createElement('div');
@@ -148,7 +148,7 @@ function createLegend() {
 
   // Bloc Après
   const apresTitle = document.createElement('h4');
-  apresTitle.textContent = 'Après';
+  apresTitle.textContent = 'Après 2020';
   legendDiv.appendChild(apresTitle);
   layersApres.forEach(l => {
     const item = document.createElement('div');
@@ -185,4 +185,5 @@ compare.on('slide', (e) => {
 
 </body>
 </html>
+
 
