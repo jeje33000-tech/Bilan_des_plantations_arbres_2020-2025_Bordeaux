@@ -73,13 +73,13 @@ const beforeMap = new mapboxgl.Map({
   container: 'before',
   style: 'mapbox://styles/mapbox/dark-v11',
   center: centerBordeaux,
-  zoom: 10
+  zoom: 12
 });
 const afterMap = new mapboxgl.Map({
   container: 'after',
   style: 'mapbox://styles/mapbox/dark-v11',
   center: centerBordeaux,
-  zoom: 10
+  zoom: 12
 });
 
 const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
@@ -87,7 +87,7 @@ const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
 // Positionne le slider complètement à gauche (après chargement des cartes)
 afterMap.on('load', () => {
   beforeMap.on('load', () => {
-    compare.setSliderPosition(0);
+    compare.setSliderPosition(1);
   });
 });
 
@@ -144,14 +144,21 @@ function updateLabelsOpacity(position) {
   labelRight.style.opacity = 1 - position;     // Après visible quand slider vers gauche
 }
 
-// Initialisation des opacités
-updateLabelsOpacity(compare.getSliderPosition());
+// Initialisation opacité labels après chargement des cartes
+afterMap.on('load', () => {
+  beforeMap.on('load', () => {
+    compare.setSliderPosition(0);
+    updateLabelsOpacity(compare.getSliderPosition());
+  });
+});
 
-// Écoute du glissement du slider
-compare.on('slide', (e) => {
-  updateLabelsOpacity(e.detail);
+// Écoute du slider
+compare.on('slide', () => {
+  const position = compare.getSliderPosition();
+  updateLabelsOpacity(position);
 });
 </script>
 
 </body>
 </html>
+
