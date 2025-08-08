@@ -153,11 +153,12 @@ function createLegend() {
 layersInfo.forEach(addLayerWithLegend);
 
 // Barre de comparaison
-new mapboxgl.Compare(beforeMap, afterMap, '#before', {});
+new mapboxgl.Compare(afterMap,beforeMap, '#before', {});
 </script>
 
 </body>
 
 </html>
+
 
 
