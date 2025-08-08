@@ -15,18 +15,23 @@
     position: absolute;
     bottom: 20px;
     left: 20px;
-    background: rgba(255,255,255,0.85);
+    background: rgba(255,255,255,0.9);
     padding: 10px;
     border-radius: 5px;
     font-family: Arial, sans-serif;
     font-size: 13px;
-    max-width: 150px;
     z-index: 1000;
+  }
+  .legend h4 {
+    margin: 5px 0;
+    font-size: 14px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 2px;
   }
   .legend div {
     display: flex;
     align-items: center;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
   }
   .legend span {
     display: inline-block;
@@ -86,7 +91,7 @@ const afterMap = new mapboxgl.Map({
 
 const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
 
-// Positionne le slider complètement à gauche au démarrage
+// Position slider initial
 afterMap.on('load', () => {
   beforeMap.on('load', () => {
     compare.setSliderPosition(0);
@@ -94,14 +99,18 @@ afterMap.on('load', () => {
   });
 });
 
-// Couches
-const layersInfo = [
-  { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Test' },
-  { map: afterMap, id: 'apres1-layer', source: 'apres1', color: 'red', label: 'Nouvelles stations' },
-  { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Stations densifiées' }
+// Définition des couches
+const layersAvant = [
+  { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Test' }
 ];
 
-function addLayerWithLegend(info) {
+const layersApres = [
+  { map: afterMap, id: 'apres1-layer', source: 'apres1', color: 'red', label: 'Nouvelles stations' },
+  { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Stations densifiées' },
+  { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'blue', label: 'Autres aménagements' }
+];
+
+function addLayer(info) {
   info.map.on('load', () => {
     info.map.addSource(info.source, {
       type: 'geojson',
@@ -123,7 +132,25 @@ function addLayerWithLegend(info) {
 function createLegend() {
   const legendDiv = document.getElementById('legend');
   legendDiv.innerHTML = '';
-  layersInfo.forEach(l => {
+
+  // Bloc Avant
+  const avantTitle = document.createElement('h4');
+  avantTitle.textContent = 'Avant';
+  legendDiv.appendChild(avantTitle);
+  layersAvant.forEach(l => {
+    const item = document.createElement('div');
+    const colorBox = document.createElement('span');
+    colorBox.style.backgroundColor = l.color;
+    item.appendChild(colorBox);
+    item.appendChild(document.createTextNode(l.label));
+    legendDiv.appendChild(item);
+  });
+
+  // Bloc Après
+  const apresTitle = document.createElement('h4');
+  apresTitle.textContent = 'Après';
+  legendDiv.appendChild(apresTitle);
+  layersApres.forEach(l => {
     const item = document.createElement('div');
     const colorBox = document.createElement('span');
     colorBox.style.backgroundColor = l.color;
@@ -133,9 +160,9 @@ function createLegend() {
   });
 }
 
-layersInfo.forEach(addLayerWithLegend);
+[...layersAvant, ...layersApres].forEach(addLayer);
 
-// Labels qui suivent le curseur
+// Labels dynamiques
 const labelLeft = document.getElementById('label-left');
 const labelRight = document.getElementById('label-right');
 
@@ -151,7 +178,6 @@ function updateLabels(position) {
   labelRight.style.opacity = 1 - position;
 }
 
-// Mettre à jour lors du déplacement du slider
 compare.on('slide', (e) => {
   updateLabels(e.detail);
 });
