@@ -101,13 +101,13 @@ afterMap.on('load', () => {
 
 // Définition des couches
 const layersAvant = [
-  { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Test' }
+  { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2015' }
 ];
 
 const layersApres = [
   { map: afterMap, id: 'apres1-layer', source: 'apres1', color: 'red', label: 'Nouvelles stations' },
   { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Stations densifiées' },
-  { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'blue', label: 'Autres aménagements' }
+  { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'green', label: 'Stations non plantées pendant le mandat' }
 ];
 
 function addLayer(info) {
@@ -185,3 +185,4 @@ compare.on('slide', (e) => {
 
 </body>
 </html>
+
