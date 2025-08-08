@@ -80,13 +80,13 @@ const beforeMap = new mapboxgl.Map({
   container: 'before',
   style: 'mapbox://styles/mapbox/dark-v11',
   center: centerBordeaux,
-  zoom: 8
+  zoom: 11
 });
 const afterMap = new mapboxgl.Map({
   container: 'after',
   style: 'mapbox://styles/mapbox/dark-v11',
   center: centerBordeaux,
-  zoom: 8
+  zoom: 11
 });
 
 const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
@@ -185,6 +185,7 @@ compare.on('slide', (e) => {
 
 </body>
 </html>
+
 
 
 
