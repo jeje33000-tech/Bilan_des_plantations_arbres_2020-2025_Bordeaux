@@ -119,13 +119,13 @@ afterMap.on('load', () => {
 
 // Définition des couches
 const layersAvant = [
-  { map: beforeMap, id: 'avant-layer', source: 'avant', color: '#F0FFFF', label: 'Stations avant 2020', data: null, count: 0 }
+  { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2020', data: null, count: 0 }
 ];
 
 const layersApres = [
   { map: afterMap, id: 'apres1-layer', source: 'apres1', color: '#FF4500', label: 'Stations créées ou en cours', data: null, count: 0 },
-  { map: afterMap, id: 'apres2-layer', source: 'apres2', color: '#00FA9A', label: 'Stations remplacées/densifiées', data: null, count: 0 },
-  { map: afterMap, id: 'apres3-layer', source: 'apres3', color: '#F0FFFF', label: 'Stations non plantées', data: null, count: 0 }
+  { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Stations remplacées/densifiées', data: null, count: 0 },
+  { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'green', label: 'Stations non plantées', data: null, count: 0 }
 ];
 
 async function addLayer(info) {
@@ -231,3 +231,4 @@ afterMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom
 </script>
 </body>
 </html>
+
