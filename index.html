@@ -249,32 +249,31 @@ compare.on('slide', e => {
 });
 updateLabels(0);
 
-// Calcul des bounds visibles uniquement sur afterMap (carte de gauche)
+// Calcule les bounds visibles de la partie "Après" (gauche) selon position slider
 function getVisibleBoundsAfter() {
   const container = document.getElementById('container');
-  const rect = container.getBoundingClientRect();
-  const containerWidth = rect.width;
+  const containerWidth = container.clientWidth;
+
+  // Position du slider (entre 0 et 1)
   const sliderPos = compare._slider ? compare._slider._pos : 0.5;
 
+  // Largeur visible pour afterMap (à gauche)
+  const visibleWidth = containerWidth * sliderPos;
+
   const map = afterMap;
-  const mapCanvas = map.getCanvas();
-  const canvasRect = mapCanvas.getBoundingClientRect();
-  const offsetX = canvasRect.left - rect.left;
+  const canvas = map.getCanvas();
+  const canvasHeight = canvas.height;
 
-  // Visible portion sur afterMap = de 0 à sliderPos * largeur totale
-  const visibleLeftPx = 0 - offsetX;
-  const visibleRightPx = sliderPos * containerWidth - offsetX;
-
-  const topLeft = map.unproject([visibleLeftPx, 0]);
-  const bottomRight = map.unproject([visibleRightPx, mapCanvas.height]);
+  // Coordonnées géographiques du rectangle visible (en pixels [0,0] -> [visibleWidth, canvasHeight])
+  const topLeft = map.unproject([0, 0]);
+  const bottomRight = map.unproject([visibleWidth, canvasHeight]);
 
   return new mapboxgl.LngLatBounds(topLeft, bottomRight);
 }
 
-// Compter stations visibles uniquement sur afterMap, dans la portion visible
+// Compter stations visibles uniquement dans la portion visible "Après"
 function countVisibleStationsAfter(layerInfo) {
   if (!layerInfo.data) return 0;
-
   const bounds = getVisibleBoundsAfter();
 
   return layerInfo.data.features.filter(f => {
@@ -356,20 +355,24 @@ const chart = new Chart(ctx, {
   }
 });
 
-// Mise à jour des stats visible uniquement sur la carte après
+// Mise à jour stats : uniquement couches après 2020
 function updateStats() {
   layersApres.forEach(l => {
     l.visibleCount = countVisibleStationsAfter(l);
+    console.log(l.label, 'visible count:', l.visibleCount);
   });
 
-  chart.data.labels = layersApres.map(l => l.label);
-  chart.data.datasets[0].data = layersApres.map(l => l.visibleCount);
-  chart.data.datasets[0].backgroundColor = layersApres.map(l => l.color);
+  const allLayers = layersApres;
+
+  chart.data.labels = allLayers.map(l => l.label);
+  chart.data.datasets[0].data = allLayers.map(l => l.visibleCount);
+  chart.data.datasets[0].backgroundColor = allLayers.map(l => l.color);
   chart.update();
 
   createLegend();
 }
 
+// Évènements de déplacement / zoom : on met à jour stats
 afterMap.on('move', updateStats);
 afterMap.on('zoom', updateStats);
 
