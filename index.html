@@ -9,8 +9,7 @@
 <style>
   body { margin:0; padding:0; }
   #before, #after { position:absolute; top:0; bottom:0; width:100%; }
-
-  /* Légende à gauche, petite et compacte */
+  /* Légende */
   .legend {
     position: absolute;
     top: 10px;
@@ -46,7 +45,6 @@
     font-weight: bold;
     color: #333;
   }
-
   /* Labels dynamiques en bas */
   #label-left, #label-right {
     position: absolute;
@@ -62,19 +60,14 @@
     z-index: 1000;
     transition: opacity 0.3s ease;
   }
-
-  /* Flèche dans label droite (après 2020) */
   #label-right::after {
     content: " ➔";
   }
-
-  /* Boutons zoom et orientation nord */
   .mapboxgl-ctrl-top-right {
     top: 10px !important;
     right: 10px !important;
   }
-
-  /* Stats dynamiques (graphique) */
+  /* Stats */
   #stats {
     position: absolute;
     bottom: 10px;
@@ -124,7 +117,32 @@ const afterMap = new mapboxgl.Map({
 
 const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
 
-// Position slider initial
+// Synchronisation des déplacements (zoom, pan)
+function syncMaps(map1, map2) {
+  let moving = false;
+  map1.on('move', () => {
+    if (moving) return;
+    moving = true;
+    const center = map1.getCenter();
+    const zoom = map1.getZoom();
+    const bearing = map1.getBearing();
+    const pitch = map1.getPitch();
+    map2.jumpTo({ center, zoom, bearing, pitch });
+    moving = false;
+  });
+  map2.on('move', () => {
+    if (moving) return;
+    moving = true;
+    const center = map2.getCenter();
+    const zoom = map2.getZoom();
+    const bearing = map2.getBearing();
+    const pitch = map2.getPitch();
+    map1.jumpTo({ center, zoom, bearing, pitch });
+    moving = false;
+  });
+}
+syncMaps(beforeMap, afterMap);
+
 afterMap.on('load', () => {
   beforeMap.on('load', () => {
     compare.setSliderPosition(0);
@@ -132,20 +150,20 @@ afterMap.on('load', () => {
   });
 });
 
-// Définition des couches
 const layersAvant = [
   { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2020', data: null, count: 0 }
 ];
-
 const layersApres = [
   { map: afterMap, id: 'apres1-layer', source: 'apres1', color: '#FF4500', label: 'Stations créées ou en cours', data: null, count: 0 },
   { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Stations remplacées/densifiées', data: null, count: 0 },
   { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'green', label: 'Stations non plantées', data: null, count: 0 }
 ];
 
-let highlightId = null; // Pour garder la feature en surbrillance
-let popup = null;       // Popup globale pour éviter d’en créer plusieurs
+let highlightId = null; // Feature en surbrillance
+let highlightLayerId = null;
+let popup = null;
 
+// Ajoute une couche, avec interaction, surbrillance, et labels CODE_STATION
 async function addLayer(info) {
   try {
     const response = await fetch(info.source + '.geojson');
@@ -158,17 +176,19 @@ async function addLayer(info) {
       type: 'geojson',
       data: geojson
     });
+
+    // Layer polygone
     info.map.addLayer({
       id: info.id,
       type: 'fill',
       source: info.source,
       paint: {
         'fill-color': info.color,
-        'fill-opacity': 0.6
+        'fill-opacity': 0.4
       }
     });
 
-    // Couche surbrillance (uniquement sur afterMap)
+    // Surbrillance (uniquement sur afterMap)
     if (info.map === afterMap) {
       info.map.addLayer({
         id: info.id + '-highlight',
@@ -176,39 +196,78 @@ async function addLayer(info) {
         source: info.source,
         paint: {
           'line-color': '#ffff00',
-          'line-width': 1
+          'line-width': 2
         },
-        filter: ['==', 'fid', ''] // Aucun au départ
+        filter: ['==', 'fid', ''] // Pas de surbrillance par défaut
       });
     }
 
-    createLegend(); // Actualise la légende après ajout de chaque couche
+    // Ajout des labels CODE_STATION (symbol layer)
+    info.map.addLayer({
+      id: info.id + '-label',
+      type: 'symbol',
+      source: info.source,
+      layout: {
+        'text-field': ['get', 'CODE_STATION'],
+        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+        'text-size': 11,
+        'text-offset': [0, 0],
+        'text-anchor': 'center',
+      },
+      paint: {
+        'text-color': info.color,
+        'text-halo-color': '#000',
+        'text-halo-width': 1,
+      }
+    });
 
-    // Ajout interaction clic sur polygones
+    createLegend();
+
+    // Interaction clic
     info.map.on('click', info.id, (e) => {
       if (!e.features.length) return;
       const feature = e.features[0];
-
-      // Surbrillance (uniquement aprèsMap)
       if (info.map === afterMap) {
+        // Mise à jour surbrillance
         highlightId = feature.properties.fid;
-        info.map.setFilter(info.id + '-highlight', ['==', ['get', 'fid'], highlightId]);
+        highlightLayerId = info.id + '-highlight';
+        info.map.setFilter(highlightLayerId, ['==', ['get', 'fid'], highlightId]);
       }
 
-      // Popup avec CODE_STATION (toujours)
+      // Popup
       const coordinates = e.lngLat;
       const codeStation = feature.properties.CODE_STATION || 'N/A';
 
-      // Ferme popup précédent
       if (popup) popup.remove();
 
       popup = new mapboxgl.Popup()
         .setLngLat(coordinates)
-        .setHTML(` ${codeStation}`)
+        .setHTML(`<strong>Code station:</strong> ${codeStation}`)
         .addTo(info.map);
     });
 
-    // Change curseur au survol
+    // Retirer surbrillance et popup quand on clique hors polygone (uniquement afterMap)
+    if (info.map === afterMap) {
+      info.map.on('click', (e) => {
+        const features = info.map.queryRenderedFeatures(e.point, {
+          layers: layersApres.map(l => l.id)
+        });
+        if (!features.length) {
+          // Reset surbrillance
+          highlightId = null;
+          layersApres.forEach(l => {
+            info.map.setFilter(l.id + '-highlight', ['==', 'fid', '']);
+          });
+          // Fermer popup
+          if (popup) {
+            popup.remove();
+            popup = null;
+          }
+        }
+      });
+    }
+
+    // Curseur pointer sur polygones
     info.map.on('mouseenter', info.id, () => {
       info.map.getCanvas().style.cursor = 'pointer';
     });
@@ -234,12 +293,12 @@ function createLegend() {
   const legendDiv = document.getElementById('legend');
   legendDiv.innerHTML = '';
 
-  // Bloc Avant
+  // Avant
   const avantTitle = document.createElement('h4');
   avantTitle.textContent = 'Avant 2020';
   legendDiv.appendChild(avantTitle);
   layersAvant.forEach(l => {
-    if(!l.data) return; // ignore si pas chargé
+    if(!l.data) return;
     const item = document.createElement('div');
     const colorBox = document.createElement('span');
     colorBox.className = 'color-box';
@@ -253,7 +312,7 @@ function createLegend() {
     legendDiv.appendChild(item);
   });
 
-  // Bloc Après
+  // Après
   const apresTitle = document.createElement('h4');
   apresTitle.textContent = 'Après 2020';
   legendDiv.appendChild(apresTitle);
@@ -292,7 +351,6 @@ function updateLabels(position) {
   labelLeft.style.left = labelLeftX + 'px';
   labelRight.style.left = labelRightX + 'px';
 
-  // Inverser opacité : gauche visible à gauche, droite visible à droite
   labelLeft.style.opacity = 1 - position;
   labelRight.style.opacity = position;
 }
@@ -301,11 +359,10 @@ compare.on('slide', (e) => {
   updateLabels(e.detail);
 });
 
-// Ajout des contrôles zoom et orientation nord
 beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
 afterMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
 
-// STATISTIQUES DYNAMIQUES avec Chart.js
+// Statistiques dynamiques avec Chart.js
 let chart = null;
 
 function updateStats() {
@@ -314,8 +371,18 @@ function updateStats() {
   function countVisibleStations(layer) {
     if (!layer.data) return 0;
     return layer.data.features.filter(f => {
-      const [lng, lat] = f.geometry.coordinates;
-      return bounds.contains([lng, lat]);
+      // Pour polygones, on prend centroid approximatif
+      const geom = f.geometry;
+      let coord;
+      if (geom.type === 'Point') {
+        coord = geom.coordinates;
+      } else if (geom.type === 'Polygon') {
+        // Centroid approximation = premier point du premier anneau
+        coord = geom.coordinates[0][0];
+      } else {
+        return false;
+      }
+      return bounds.contains(coord);
     }).length;
   }
 
@@ -323,7 +390,8 @@ function updateStats() {
   const counts = [];
   const colors = [];
 
-  layersApres.forEach(layer => {
+  // On compte aussi les avant pour plus de cohérence
+  [...layersAvant, ...layersApres].forEach(layer => {
     const visibleCount = countVisibleStations(layer);
     if (visibleCount > 0) {
       labels.push(layer.label);
@@ -337,7 +405,6 @@ function updateStats() {
     document.getElementById('stats').innerHTML = '<p style="text-align:center; padding-top: 70px;">Aucune station visible</p>';
     return;
   } else {
-    // Remet le canvas au cas où
     document.getElementById('stats').innerHTML = '<canvas id="chart"></canvas>';
   }
 
@@ -346,6 +413,7 @@ function updateStats() {
   if (chart) {
     chart.data.labels = labels;
     chart.data.datasets[0].data = counts;
+    chart.data.datasets[0].backgroundColor = colors;
     chart.update();
   } else {
     chart = new Chart(ctx, {
@@ -376,11 +444,10 @@ function updateStats() {
   }
 }
 
+// Met à jour les stats lors des mouvements des cartes
 afterMap.on('moveend', updateStats);
+beforeMap.on('moveend', updateStats);
 
 </script>
 </body>
 </html>
-
-
-
