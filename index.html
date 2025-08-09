@@ -1,3 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Swipe Avant/Après - Plusieurs couches dynamiques</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" rel="stylesheet" />
+<style>
+  body { margin:0; padding:0; }
+  #before, #after { position:absolute; top:0; bottom:0; width:100%; }
+  
+  /* Légende plus petite et à gauche */
+  .legend {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(255,255,255,0.9);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    z-index: 1000;
+    max-width: 150px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .legend h4 {
+    margin: 0 0 4px 0;
+    font-size: 11px;
+    font-weight: bold;
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .legend div {
+    display: flex;
+    align-items: center;
+  }
+  .legend span.color-box {
+    width: 14px;
+    height: 10px;
+    margin-right: 6px;
+    border: 1px solid #555;
+    flex-shrink: 0;
+  }
+  .legend span.count {
+    margin-left: 4px;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  /* Labels dynamiques inversés et plus petits */
+  #label-left, #label-right {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.8);
+    font-weight: bold;
+    border-radius: 4px;
+    pointer-events: none;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    z-index: 1000;
+    white-space: nowrap;
+    transition: opacity 0.3s ease, left 0.3s ease, right 0.3s ease;
+  }
+  #label-left {
+    left: 10px;
+  }
+  #label-right {
+    right: 10px;
+  }
+  #label-left::after {
+    content: ' ➔';
+  }
+  #label-right::after {
+    content: '';
+  }
+
+  /* Boutons zoom et nord */
+  .mapboxgl-ctrl-top-right {
+    top: 10px !important;
+    right: 10px !important;
+  }
+</style>
+</head>
+<body>
+
+<div id="before"></div>
+<div id="after"></div>
+
+<div id="label-left">Après 2020</div>
+<div id="label-right">Avant 2020</div>
+
+<div id="legend" class="legend"></div>
+
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
+
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoiamVqZTMzMDAwIiwiYSI6ImNtZTJ2c3RnaDAwczEyanF6bW9wODI0cTgifQ.AYOAKWDyDLP_fbKIz-QdwQ';
+
+const centerBordeaux = [-0.57409, 44.861022];
+
+const beforeMap = new mapboxgl.Map({
+  container: 'before',
+  style: 'mapbox://styles/mapbox/dark-v11',
+  center: centerBordeaux,
+  zoom: 11.5
+});
+const afterMap = new mapboxgl.Map({
+  container: 'after',
+  style: 'mapbox://styles/mapbox/dark-v11',
+  center: centerBordeaux,
+  zoom: 11.5
+});
+
+const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
+
+// Position slider initial
+afterMap.on('load', () => {
+  beforeMap.on('load', () => {
+    compare.setSliderPosition(0);
+    updateLabels(0);
+  });
+});
+
+// Définition des couches
+const layersAvant = [
+  { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2020', data: null, count: 0 }
+];
+
+const layersApres = [
+  { map: afterMap, id: 'apres1-layer', source: 'apres1', color: '#FF4500', label: 'Stations créées ou en cours', data: null, count: 0 },
+  { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Stations remplacées/densifiées', data: null, count: 0 },
+  { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'green', label: 'Stations non plantées', data: null, count: 0 }
+];
+
 async function addLayer(info) {
   try {
     const response = await fetch(info.source + '.geojson');
@@ -29,8 +169,8 @@ async function addLayer(info) {
       layout: {
         'text-field': [
           'case',
-          ['>=', ['zoom'], 20],     // affichage seulement à zoom >= 20
-          ['get', 'CODE_STATION'], // récupère le champ CODE_STATION
+          ['>=', ['zoom'], 20],
+          ['get', 'CODE_STATION'],
           ''
         ],
         'text-size': 12,
@@ -49,3 +189,65 @@ async function addLayer(info) {
     console.error('Erreur chargement couche ' + info.source, err);
   }
 }
+
+async function loadAllLayers() {
+  for (const layer of [...layersAvant, ...layersApres]) {
+    await addLayer(layer);
+  }
+}
+loadAllLayers();
+
+function createLegend() {
+  const legendDiv = document.getElementById('legend');
+  legendDiv.innerHTML = '';
+
+  // Bloc Avant
+  const avantTitle = document.createElement('h4');
+  avantTitle.textContent = 'Avant 2020';
+  legendDiv.appendChild(avantTitle);
+  layersAvant.forEach(l => {
+    if(!l.data) return; // ignore si pas chargé
+    const item = document.createElement('div');
+    const colorBox = document.createElement('span');
+    colorBox.className = 'color-box';
+    colorBox.style.backgroundColor = l.color;
+    item.appendChild(colorBox);
+    item.appendChild(document.createTextNode(l.label));
+    const countSpan = document.createElement('span');
+    countSpan.className = 'count';
+    countSpan.textContent = `(${l.count})`;
+    item.appendChild(countSpan);
+    legendDiv.appendChild(item);
+  });
+
+  // Bloc Après
+  const apresTitle = document.createElement('h4');
+  apresTitle.textContent = 'Après 2020';
+  legendDiv.appendChild(apresTitle);
+  layersApres.forEach(l => {
+    if(!l.data) return;
+    const item = document.createElement('div');
+    const colorBox = document.createElement('span');
+    colorBox.className = 'color-box';
+    colorBox.style.backgroundColor = l.color;
+    item.appendChild(colorBox);
+    item.appendChild(document.createTextNode(l.label));
+    const countSpan = document.createElement('span');
+    countSpan.className = 'count';
+    countSpan.textContent = `(${l.count})`;
+    item.appendChild(countSpan);
+    legendDiv.appendChild(item);
+  });
+}
+
+// Labels dynamiques
+const labelLeft = document.getElementById('label-left');
+const labelRight = document.getElementById('label-right');
+
+function updateLabels(position) {
+  const windowWidth = window.innerWidth;
+  const sliderX = windowWidth * position;
+
+  // Inverser les positions et opacités
+  labelLeft.style.left = (sliderX + 10) + 'px';
+  labelR
