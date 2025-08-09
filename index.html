@@ -63,8 +63,8 @@
     transition: opacity 0.3s ease;
   }
 
-  /* Flèche dans label droite (après 2020) */
-  #label-right::after {
+  /* Flèche dans label gauche (Après 2020) */
+  #label-left::after {
     content: " ➔";
   }
 
@@ -80,8 +80,8 @@
 <div id="before"></div>
 <div id="after"></div>
 
-<div id="label-left">Avant 2020</div>
-<div id="label-right">Après 2020</div>
+<div id="label-left">Après 2020</div>
+<div id="label-right">Avant 2020</div>
 
 <div id="legend" class="legend"></div>
 
@@ -127,6 +127,7 @@ const layersApres = [
   { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'green', label: 'Stations non plantées', data: null, count: 0 }
 ];
 
+// Ajout des couches + gestion popups et labels CODE_STATION à zoom >= 20
 async function addLayer(info) {
   try {
     const response = await fetch(info.source + '.geojson');
@@ -139,6 +140,8 @@ async function addLayer(info) {
       type: 'geojson',
       data: geojson
     });
+
+    // Ajout couche polygones fill
     info.map.addLayer({
       id: info.id,
       type: 'fill',
@@ -148,6 +151,53 @@ async function addLayer(info) {
         'fill-opacity': 0.6
       }
     });
+
+    // Si c'est la couche "apres1-layer" sur afterMap, on ajoute aussi une couche label (symbol) pour CODE_STATION
+    if(info.id === 'apres1-layer' && info.map === afterMap) {
+      info.map.addLayer({
+        id: 'apres1-label-layer',
+        type: 'symbol',
+        source: info.source,
+        layout: {
+          'text-field': ['get', 'CODE_STATION'],
+          'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+          'text-size': 10,
+          'text-offset': [0, 0.6],
+          'text-anchor': 'top',
+          'visibility': 'none' // cachée par défaut, visible à zoom >= 20
+        },
+        paint: {
+          'text-color': info.color
+        }
+      });
+
+      // Popups au clic
+      info.map.on('click', info.id, (e) => {
+        const props = e.features[0].properties;
+        new mapboxgl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(`<strong>Code station:</strong> ${props.CODE_STATION}`)
+          .addTo(info.map);
+      });
+
+      // Curseur pointeur au survol
+      info.map.on('mouseenter', info.id, () => {
+        info.map.getCanvas().style.cursor = 'pointer';
+      });
+      info.map.on('mouseleave', info.id, () => {
+        info.map.getCanvas().style.cursor = '';
+      });
+
+      // Afficher/cacher labels à zoom >= 20
+      info.map.on('zoom', () => {
+        const zoom = info.map.getZoom();
+        if (zoom >= 20) {
+          info.map.setLayoutProperty('apres1-label-layer', 'visibility', 'visible');
+        } else {
+          info.map.setLayoutProperty('apres1-label-layer', 'visibility', 'none');
+        }
+      });
+    }
 
     createLegend(); // Actualise la légende après ajout de chaque couche
   } catch (err) {
@@ -172,71 +222,4 @@ function createLegend() {
   legendDiv.appendChild(avantTitle);
   layersAvant.forEach(l => {
     if(!l.data) return; // ignore si pas chargé
-    const item = document.createElement('div');
-    const colorBox = document.createElement('span');
-    colorBox.className = 'color-box';
-    colorBox.style.backgroundColor = l.color;
-    item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(l.label));
-    const countSpan = document.createElement('span');
-    countSpan.className = 'count';
-    countSpan.textContent = `(${l.count})`;
-    item.appendChild(countSpan);
-    legendDiv.appendChild(item);
-  });
-
-  // Bloc Après
-  const apresTitle = document.createElement('h4');
-  apresTitle.textContent = 'Après 2020';
-  legendDiv.appendChild(apresTitle);
-  layersApres.forEach(l => {
-    if(!l.data) return;
-    const item = document.createElement('div');
-    const colorBox = document.createElement('span');
-    colorBox.className = 'color-box';
-    colorBox.style.backgroundColor = l.color;
-    item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(l.label));
-    const countSpan = document.createElement('span');
-    countSpan.className = 'count';
-    countSpan.textContent = `(${l.count})`;
-    item.appendChild(countSpan);
-    legendDiv.appendChild(item);
-  });
-}
-
-// Labels dynamiques
-const labelLeft = document.getElementById('label-left');
-const labelRight = document.getElementById('label-right');
-
-function updateLabels(position) {
-  const sliderX = window.innerWidth * position;
-
-  const minSpace = 15;
-
-  let labelRightX = sliderX + 10;
-  let labelLeftX = sliderX - labelLeft.offsetWidth - 10;
-
-  if (labelLeftX + labelLeft.offsetWidth + minSpace > labelRightX) {
-    labelLeftX = labelRightX - labelLeft.offsetWidth - minSpace;
-  }
-
-  labelLeft.style.left = labelLeftX + 'px';
-  labelRight.style.left = labelRightX + 'px';
-
-  // Inverser opacité : gauche visible à gauche, droite visible à droite
-  labelLeft.style.opacity = 1 - position;
-  labelRight.style.opacity = position;
-}
-
-compare.on('slide', (e) => {
-  updateLabels(e.detail);
-});
-
-// Ajout des contrôles zoom et orientation nord
-beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
-afterMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
-
-</script>
-</body>
-</html>
+    const item = document.createElement
