@@ -10,6 +10,7 @@
   body { margin:0; padding:0; }
   #before, #after { position:absolute; top:0; bottom:0; width:100%; }
 
+  /* Légende à gauche, petite et compacte */
   .legend {
     position: absolute;
     top: 10px;
@@ -46,6 +47,7 @@
     color: #333;
   }
 
+  /* Labels dynamiques en bas */
   #label-left, #label-right {
     position: absolute;
     bottom: 30px;
@@ -61,13 +63,29 @@
     transition: opacity 0.3s ease;
   }
 
+  /* Flèche dans label droite (après 2020) */
   #label-right::after {
     content: " ➔";
   }
 
+  /* Boutons zoom et orientation nord */
   .mapboxgl-ctrl-top-right {
     top: 10px !important;
     right: 10px !important;
+  }
+
+  /* Stats dynamiques (graphique) */
+  #stats {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 280px;
+    height: 180px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 5px;
+    padding: 10px;
+    font-family: Arial, sans-serif;
+    z-index: 1000;
   }
 </style>
 </head>
@@ -80,9 +98,11 @@
 <div id="label-right">Après 2020</div>
 
 <div id="legend" class="legend"></div>
+<div id="stats"><canvas id="chart"></canvas></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 mapboxgl.accessToken = 'pk.eyJ1IjoiamVqZTMzMDAwIiwiYSI6ImNtZTJ2c3RnaDAwczEyanF6bW9wODI0cTgifQ.AYOAKWDyDLP_fbKIz-QdwQ';
@@ -123,7 +143,8 @@ const layersApres = [
   { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'green', label: 'Stations non plantées', data: null, count: 0 }
 ];
 
-let highlightId = null; // Pour la surbrillance dans afterMap
+let highlightId = null; // Pour garder la feature en surbrillance
+let popup = null;       // Popup globale pour éviter d’en créer plusieurs
 
 async function addLayer(info) {
   try {
@@ -137,7 +158,6 @@ async function addLayer(info) {
       type: 'geojson',
       data: geojson
     });
-
     info.map.addLayer({
       id: info.id,
       type: 'fill',
@@ -148,7 +168,7 @@ async function addLayer(info) {
       }
     });
 
-    // Ajouter la couche surbrillance **seulement pour afterMap**
+    // Couche surbrillance (uniquement sur afterMap)
     if (info.map === afterMap) {
       info.map.addLayer({
         id: info.id + '-highlight',
@@ -158,34 +178,37 @@ async function addLayer(info) {
           'line-color': '#ffff00',
           'line-width': 4
         },
-        filter: ['==', ['get', 'fid'], ''] // Aucun au départ
+        filter: ['==', 'fid', ''] // Aucun au départ
       });
     }
 
-    createLegend();
+    createLegend(); // Actualise la légende après ajout de chaque couche
 
-    // Ajout interaction clic sur polygones uniquement dans afterMap
-    if (info.map === afterMap) {
-      info.map.on('click', info.id, (e) => {
-        if (!e.features.length) return;
-        const feature = e.features[0];
-        const fid = feature.properties.fid;
-        const codeStation = feature.properties.CODE_STATION || 'N/A';
-        if (!fid) return;
+    // Ajout interaction clic sur polygones
+    info.map.on('click', info.id, (e) => {
+      if (!e.features.length) return;
+      const feature = e.features[0];
 
-        // Surbrillance
-        highlightId = fid;
+      // Surbrillance (uniquement aprèsMap)
+      if (info.map === afterMap) {
+        highlightId = feature.properties.fid;
         info.map.setFilter(info.id + '-highlight', ['==', ['get', 'fid'], highlightId]);
+      }
 
-        // Popup CODE_STATION
-        new mapboxgl.Popup()
-          .setLngLat(e.lngLat)
-          .setHTML(`<strong>CODE_STATION:</strong> ${codeStation}`)
-          .addTo(info.map);
-      });
-    }
+      // Popup avec CODE_STATION (toujours)
+      const coordinates = e.lngLat;
+      const codeStation = feature.properties.CODE_STATION || 'N/A';
 
-    // Change curseur au survol pour toutes couches
+      // Ferme popup précédent
+      if (popup) popup.remove();
+
+      popup = new mapboxgl.Popup()
+        .setLngLat(coordinates)
+        .setHTML(`<strong>CODE_STATION:</strong> ${codeStation}`)
+        .addTo(info.map);
+    });
+
+    // Change curseur au survol
     info.map.on('mouseenter', info.id, () => {
       info.map.getCanvas().style.cursor = 'pointer';
     });
@@ -203,32 +226,20 @@ async function loadAllLayers() {
     await addLayer(layer);
   }
 }
-loadAllLayers();
-
-
-// Clic sur afterMap en dehors des features => retirer la surbrillance et fermer popup
-afterMap.on('click', (e) => {
-  const features = afterMap.queryRenderedFeatures(e.point, { layers: layersApres.map(l => l.id) });
-  if (features.length === 0) {
-    highlightId = null;
-    layersApres.forEach(l => {
-      afterMap.setFilter(l.id + '-highlight', ['==', ['get', 'fid'], '']);
-    });
-    // Fermer toutes les popups (une manière simple)
-    const popups = document.getElementsByClassName('mapboxgl-popup');
-    while (popups[0]) popups[0].remove();
-  }
+loadAllLayers().then(() => {
+  updateStats();
 });
 
 function createLegend() {
   const legendDiv = document.getElementById('legend');
   legendDiv.innerHTML = '';
 
+  // Bloc Avant
   const avantTitle = document.createElement('h4');
   avantTitle.textContent = 'Avant 2020';
   legendDiv.appendChild(avantTitle);
   layersAvant.forEach(l => {
-    if (!l.data) return;
+    if(!l.data) return; // ignore si pas chargé
     const item = document.createElement('div');
     const colorBox = document.createElement('span');
     colorBox.className = 'color-box';
@@ -242,11 +253,12 @@ function createLegend() {
     legendDiv.appendChild(item);
   });
 
+  // Bloc Après
   const apresTitle = document.createElement('h4');
   apresTitle.textContent = 'Après 2020';
   legendDiv.appendChild(apresTitle);
   layersApres.forEach(l => {
-    if (!l.data) return;
+    if(!l.data) return;
     const item = document.createElement('div');
     const colorBox = document.createElement('span');
     colorBox.className = 'color-box';
@@ -267,14 +279,20 @@ const labelRight = document.getElementById('label-right');
 
 function updateLabels(position) {
   const sliderX = window.innerWidth * position;
+
   const minSpace = 15;
+
   let labelRightX = sliderX + 10;
   let labelLeftX = sliderX - labelLeft.offsetWidth - 10;
+
   if (labelLeftX + labelLeft.offsetWidth + minSpace > labelRightX) {
     labelLeftX = labelRightX - labelLeft.offsetWidth - minSpace;
   }
+
   labelLeft.style.left = labelLeftX + 'px';
   labelRight.style.left = labelRightX + 'px';
+
+  // Inverser opacité : gauche visible à gauche, droite visible à droite
   labelLeft.style.opacity = 1 - position;
   labelRight.style.opacity = position;
 }
@@ -283,9 +301,85 @@ compare.on('slide', (e) => {
   updateLabels(e.detail);
 });
 
+// Ajout des contrôles zoom et orientation nord
 beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
 afterMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+
+// STATISTIQUES DYNAMIQUES avec Chart.js
+let chart = null;
+
+function updateStats() {
+  const bounds = afterMap.getBounds();
+
+  function countVisibleStations(layer) {
+    if (!layer.data) return 0;
+    return layer.data.features.filter(f => {
+      const [lng, lat] = f.geometry.coordinates;
+      return bounds.contains([lng, lat]);
+    }).length;
+  }
+
+  const labels = [];
+  const counts = [];
+  const colors = [];
+
+  layersApres.forEach(layer => {
+    const visibleCount = countVisibleStations(layer);
+    if (visibleCount > 0) {
+      labels.push(layer.label);
+      counts.push(visibleCount);
+      colors.push(layer.color);
+    }
+  });
+
+  if (counts.length === 0) {
+    if (chart) chart.destroy();
+    document.getElementById('stats').innerHTML = '<p style="text-align:center; padding-top: 70px;">Aucune station visible</p>';
+    return;
+  } else {
+    // Remet le canvas au cas où
+    document.getElementById('stats').innerHTML = '<canvas id="chart"></canvas>';
+  }
+
+  const ctx = document.getElementById('chart').getContext('2d');
+
+  if (chart) {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = counts;
+    chart.update();
+  } else {
+    chart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: counts,
+          backgroundColor: colors,
+          borderWidth: 1,
+          borderColor: '#ccc',
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+          },
+          tooltip: {
+            callbacks: {
+              label: context => `${context.label}: ${context.parsed}`,
+            }
+          }
+        }
+      }
+    });
+  }
+}
+
+afterMap.on('moveend', updateStats);
 
 </script>
 </body>
 </html>
+
+
