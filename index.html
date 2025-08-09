@@ -256,7 +256,6 @@ function countVisibleStations(layerInfo) {
 
   return layerInfo.data.features.filter(f => {
     let coord = null;
-    // Géométrie peut être Point ou Polygone — on prend un point de référence
     if (f.geometry.type === 'Point') {
       coord = f.geometry.coordinates;
     } else if (f.geometry.type === 'Polygon') {
@@ -268,7 +267,7 @@ function countVisibleStations(layerInfo) {
   }).length;
 }
 
-// Mise à jour légende avec count total et count visible
+// Mise à jour légende (total seulement)
 function createLegend() {
   const legendDiv = document.getElementById('legend');
   legendDiv.innerHTML = '';
@@ -283,10 +282,10 @@ function createLegend() {
     colorBox.className = 'color-box';
     colorBox.style.backgroundColor = l.color;
     item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(`${l.label} (visible / total)`));
+    item.appendChild(document.createTextNode(`${l.label} (total)`));
     const countSpan = document.createElement('span');
     countSpan.className = 'count';
-    countSpan.textContent = `${l.visibleCount} / ${l.totalCount}`;
+    countSpan.textContent = `${l.totalCount}`;
     item.appendChild(countSpan);
     legendDiv.appendChild(item);
   });
@@ -301,10 +300,10 @@ function createLegend() {
     colorBox.className = 'color-box';
     colorBox.style.backgroundColor = l.color;
     item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(`${l.label} (visible / total)`));
+    item.appendChild(document.createTextNode(`${l.label} (total)`));
     const countSpan = document.createElement('span');
     countSpan.className = 'count';
-    countSpan.textContent = `${l.visibleCount} / ${l.totalCount}`;
+    countSpan.textContent = `${l.totalCount}`;
     item.appendChild(countSpan);
     legendDiv.appendChild(item);
   });
@@ -334,25 +333,27 @@ const chart = new Chart(ctx, {
   }
 });
 
-// Met à jour stats et graphique
+// Mise à jour stats : uniquement couches après 2020
 function updateStats() {
-  [...layersAvant, ...layersApres].forEach(l => {
+  layersApres.forEach(l => {
     l.visibleCount = countVisibleStations(l);
   });
-  createLegend();
 
-  const allLayers = [...layersAvant, ...layersApres];
+  const allLayers = layersApres;
+
   chart.data.labels = allLayers.map(l => l.label);
   chart.data.datasets[0].data = allLayers.map(l => l.visibleCount);
   chart.data.datasets[0].backgroundColor = allLayers.map(l => l.color);
   chart.update();
+
+  createLegend();
 }
 
-// Mise à jour stats après mouvements et zooms
-beforeMap.on('moveend', updateStats);
-afterMap.on('moveend', updateStats);
+afterMap.on('move', updateStats);
+beforeMap.on('move', updateStats);
 
 </script>
+
 </body>
 </html>
 
