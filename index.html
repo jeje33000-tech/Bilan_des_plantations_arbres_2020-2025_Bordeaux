@@ -2,34 +2,30 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<title>Swipe Avant/Après - Plusieurs couches dynamiques</title>
+<title>Swipe Avant/Après - Plusieurs couches dynamiques corrigé</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
 <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" rel="stylesheet" />
 <style>
   body { margin:0; padding:0; }
   #before, #after { position:absolute; top:0; bottom:0; width:100%; }
-  
-  /* Légende en haut, plus petite */
+
+  /* Légende à gauche, largeur max fixée, plus compacte */
   .legend {
     position: absolute;
     top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 10px;
     background: rgba(255,255,255,0.9);
-    padding: 6px 12px;
+    padding: 8px 12px;
     border-radius: 5px;
     font-family: Arial, sans-serif;
     font-size: 12px;
     z-index: 1000;
-    max-width: 400px;
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-    align-items: center;
+    max-width: 220px;
+    box-shadow: 0 0 6px rgba(0,0,0,0.2);
   }
   .legend h4 {
-    margin: 0 8px 0 0;
+    margin: 0 0 6px 0;
     font-size: 13px;
     border-bottom: none;
     padding-bottom: 0;
@@ -37,28 +33,27 @@
   .legend div {
     display: flex;
     align-items: center;
-    margin: 0 5px;
+    margin-bottom: 5px;
   }
   .legend span.color-box {
     width: 18px;
     height: 12px;
-    margin-right: 6px;
+    margin-right: 8px;
     border: 1px solid #555;
     flex-shrink: 0;
   }
   .legend span.count {
-    margin-left: 4px;
+    margin-left: auto;
     font-weight: bold;
     color: #333;
   }
-  
-  /* Labels dynamiques */
+
+  /* Labels dynamiques corrigés */
   #label-left, #label-right {
     position: absolute;
     top: 50%;
-    transform: translateY(-50%);
     padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.85);
     font-weight: bold;
     border-radius: 4px;
     pointer-events: none;
@@ -67,6 +62,26 @@
     z-index: 1000;
     white-space: nowrap;
     transition: opacity 0.3s ease;
+    user-select: none;
+  }
+  #label-left {
+    left: 10px;
+    transform: translateY(-50%);
+    opacity: 1; /* visible au départ */
+  }
+  #label-right {
+    right: 10px;
+    transform: translateY(-50%);
+    opacity: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  /* Flèche simple CSS dans label après */
+  #label-right::after {
+    content: '➔';
+    font-size: 18px;
+    color: #333;
   }
 
   /* Boutons zoom et nord */
@@ -107,7 +122,9 @@ const afterMap = new mapboxgl.Map({
   zoom: 11.5
 });
 
-const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
+const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {
+  // option pour slider vertical ou horizontal, horizontal par défaut
+});
 
 // Position slider initial
 afterMap.on('load', () => {
@@ -117,7 +134,7 @@ afterMap.on('load', () => {
   });
 });
 
-// Définition des couches
+// Définition des couches (tu peux ajuster couleurs et sources)
 const layersAvant = [
   { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2020', data: null, count: 0 }
 ];
@@ -128,6 +145,7 @@ const layersApres = [
   { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'green', label: 'Stations non plantées', data: null, count: 0 }
 ];
 
+// Chargement et ajout des couches + mise à jour légende
 async function addLayer(info) {
   try {
     const response = await fetch(info.source + '.geojson');
@@ -206,18 +224,22 @@ function createLegend() {
   });
 }
 
-// Labels dynamiques
+// Labels dynamiques corrigés
 const labelLeft = document.getElementById('label-left');
 const labelRight = document.getElementById('label-right');
 
 function updateLabels(position) {
   const sliderX = window.innerWidth * position;
 
-  labelLeft.style.left = (sliderX - labelLeft.offsetWidth - 10) + 'px';
-  labelRight.style.left = (sliderX + 10) + 'px';
+  // Le label gauche apparait à gauche du slider (mais pas hors écran)
+  const leftX = Math.max(10, sliderX - labelLeft.offsetWidth - 10);
+  labelLeft.style.left = leftX + 'px';
+  labelLeft.style.opacity = (position > 0.02) ? position : 0;
 
-  labelLeft.style.opacity = position;
-  labelRight.style.opacity = 1 - position;
+  // Le label droite apparait à droite du slider (mais pas hors écran)
+  const rightX = Math.min(window.innerWidth - labelRight.offsetWidth - 10, sliderX + 10);
+  labelRight.style.left = rightX + 'px';
+  labelRight.style.opacity = (position < 0.98) ? (1 - position) : 0;
 }
 
 compare.on('slide', (e) => {
@@ -227,8 +249,6 @@ compare.on('slide', (e) => {
 // Ajout des contrôles zoom et orientation nord
 beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
 afterMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
-
 </script>
 </body>
 </html>
-
