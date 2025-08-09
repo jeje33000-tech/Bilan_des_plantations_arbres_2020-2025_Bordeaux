@@ -176,7 +176,7 @@ async function addLayer(info) {
         source: info.source,
         paint: {
           'line-color': '#ffff00',
-          'line-width': 4
+          'line-width': 1
         },
         filter: ['==', 'fid', ''] // Aucun au départ
       });
@@ -204,7 +204,7 @@ async function addLayer(info) {
 
       popup = new mapboxgl.Popup()
         .setLngLat(coordinates)
-        .setHTML(`<strong>CODE_STATION:</strong> ${codeStation}`)
+        .setHTML(` ${codeStation}`)
         .addTo(info.map);
     });
 
@@ -381,5 +381,6 @@ afterMap.on('moveend', updateStats);
 </script>
 </body>
 </html>
+
 
 
