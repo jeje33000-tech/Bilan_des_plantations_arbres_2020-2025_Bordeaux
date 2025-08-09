@@ -117,29 +117,21 @@ const afterMap = new mapboxgl.Map({
 
 const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
 
-// Synchronisation des déplacements (zoom, pan)
+// Synchronisation des déplacements (zoom, pan) améliorée
 function syncMaps(map1, map2) {
   let moving = false;
-  map1.on('move', () => {
+  function onMove(e) {
     if (moving) return;
     moving = true;
-    const center = map1.getCenter();
-    const zoom = map1.getZoom();
-    const bearing = map1.getBearing();
-    const pitch = map1.getPitch();
+    const center = e.target.getCenter();
+    const zoom = e.target.getZoom();
+    const bearing = e.target.getBearing();
+    const pitch = e.target.getPitch();
     map2.jumpTo({ center, zoom, bearing, pitch });
     moving = false;
-  });
-  map2.on('move', () => {
-    if (moving) return;
-    moving = true;
-    const center = map2.getCenter();
-    const zoom = map2.getZoom();
-    const bearing = map2.getBearing();
-    const pitch = map2.getPitch();
-    map1.jumpTo({ center, zoom, bearing, pitch });
-    moving = false;
-  });
+  }
+  map1.on('move', onMove);
+  map2.on('move', onMove);
 }
 syncMaps(beforeMap, afterMap);
 
@@ -159,8 +151,7 @@ const layersApres = [
   { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'green', label: 'Stations non plantées', data: null, count: 0 }
 ];
 
-let highlightId = null; // Feature en surbrillance
-let highlightLayerId = null;
+let highlightId = null;
 let popup = null;
 
 // Ajoute une couche, avec interaction, surbrillance, et labels CODE_STATION
@@ -177,32 +168,32 @@ async function addLayer(info) {
       data: geojson
     });
 
-    // Layer polygone
+    // Layer polygone avec opacité 0.6
     info.map.addLayer({
       id: info.id,
       type: 'fill',
       source: info.source,
       paint: {
         'fill-color': info.color,
-        'fill-opacity': 0.4
+        'fill-opacity': 0.6
       }
     });
 
-    // Surbrillance (uniquement sur afterMap)
+    // Surbrillance (uniquement sur afterMap) : polygone transparent 0.3
     if (info.map === afterMap) {
       info.map.addLayer({
         id: info.id + '-highlight',
-        type: 'line',
+        type: 'fill',
         source: info.source,
         paint: {
-          'line-color': '#ffff00',
-          'line-width': 2
+          'fill-color': '#ffff00',
+          'fill-opacity': 0.3
         },
-        filter: ['==', 'fid', ''] // Pas de surbrillance par défaut
+        filter: ['==', 'fid', ''] // Pas de surbrillance au départ
       });
     }
 
-    // Ajout des labels CODE_STATION (symbol layer)
+    // Ajout des labels CODE_STATION (symbol layer), visibles à partir du zoom 15
     info.map.addLayer({
       id: info.id + '-label',
       type: 'symbol',
@@ -213,6 +204,7 @@ async function addLayer(info) {
         'text-size': 11,
         'text-offset': [0, 0],
         'text-anchor': 'center',
+        'visibility': 'none' // caché par défaut
       },
       paint: {
         'text-color': info.color,
@@ -221,6 +213,17 @@ async function addLayer(info) {
       }
     });
 
+    // Affiche ou masque les labels selon zoom
+    function toggleLabels() {
+      const zoom = info.map.getZoom();
+      const visibility = zoom >= 15 ? 'visible' : 'none';
+      if (info.map.getLayer(info.id + '-label')) {
+        info.map.setLayoutProperty(info.id + '-label', 'visibility', visibility);
+      }
+    }
+    toggleLabels();
+    info.map.on('zoom', toggleLabels);
+
     createLegend();
 
     // Interaction clic
@@ -228,13 +231,10 @@ async function addLayer(info) {
       if (!e.features.length) return;
       const feature = e.features[0];
       if (info.map === afterMap) {
-        // Mise à jour surbrillance
         highlightId = feature.properties.fid;
-        highlightLayerId = info.id + '-highlight';
-        info.map.setFilter(highlightLayerId, ['==', ['get', 'fid'], highlightId]);
+        info.map.setFilter(info.id + '-highlight', ['==', ['get', 'fid'], highlightId]);
       }
 
-      // Popup
       const coordinates = e.lngLat;
       const codeStation = feature.properties.CODE_STATION || 'N/A';
 
@@ -253,12 +253,10 @@ async function addLayer(info) {
           layers: layersApres.map(l => l.id)
         });
         if (!features.length) {
-          // Reset surbrillance
           highlightId = null;
           layersApres.forEach(l => {
             info.map.setFilter(l.id + '-highlight', ['==', 'fid', '']);
           });
-          // Fermer popup
           if (popup) {
             popup.remove();
             popup = null;
@@ -332,7 +330,6 @@ function createLegend() {
   });
 }
 
-// Labels dynamiques
 const labelLeft = document.getElementById('label-left');
 const labelRight = document.getElementById('label-right');
 
@@ -371,13 +368,11 @@ function updateStats() {
   function countVisibleStations(layer) {
     if (!layer.data) return 0;
     return layer.data.features.filter(f => {
-      // Pour polygones, on prend centroid approximatif
       const geom = f.geometry;
       let coord;
       if (geom.type === 'Point') {
         coord = geom.coordinates;
       } else if (geom.type === 'Polygon') {
-        // Centroid approximation = premier point du premier anneau
         coord = geom.coordinates[0][0];
       } else {
         return false;
@@ -390,7 +385,6 @@ function updateStats() {
   const counts = [];
   const colors = [];
 
-  // On compte aussi les avant pour plus de cohérence
   [...layersAvant, ...layersApres].forEach(layer => {
     const visibleCount = countVisibleStations(layer);
     if (visibleCount > 0) {
@@ -444,7 +438,6 @@ function updateStats() {
   }
 }
 
-// Met à jour les stats lors des mouvements des cartes
 afterMap.on('moveend', updateStats);
 beforeMap.on('moveend', updateStats);
 
