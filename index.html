@@ -1,356 +1,197 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<title>Swipe Avant/Après corrigé</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
-<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" rel="stylesheet" />
+<meta charset="utf-8" />
+<title>Comparateur Avant / Après</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<!-- Plugins Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen/Control.FullScreen.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-search/dist/leaflet-search.min.css" />
+
 <style>
-  body,html { margin:0; padding:0; height:100%; }
-  #container { position:relative; width:100%; height:100vh; }
-  #before, #after { position:absolute; top:0; bottom:0; width:100%; }
-  .legend {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: rgba(255,255,255,0.9);
-    padding: 6px 12px;
-    border-radius: 5px;
-    font-family: Arial, sans-serif;
+html, body { height: 100%; margin: 0; }
+#map { width: 100%; height: 100%; }
+.legend {
+    background: white;
+    padding: 4px 6px;
+    font-size: 11px;
+    line-height: 1.2em;
+    border-radius: 4px;
+}
+.stats-panel {
+    background: white;
+    padding: 6px;
+    font-size: 11px;
+    border-radius: 4px;
+    max-width: 180px;
+}
+.stats-title {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+.stats-toggle {
+    background: white;
+    padding: 4px;
+    border-radius: 4px;
+    cursor: pointer;
     font-size: 12px;
-    z-index: 1000;
-    max-width: 280px;
-  }
-  .legend h4 {
-    margin: 6px 0 4px;
-    font-size: 13px;
-  }
-  .legend div {
-    display: flex;
-    align-items: center;
-    margin: 2px 0;
-  }
-  .legend span.color-box {
-    width: 18px;
-    height: 14px;
-    margin-right: 6px;
-    border: 1px solid #555;
-    flex-shrink: 0;
-  }
-  .legend span.count {
-    margin-left: auto;
-    font-weight: bold;
-    color: #333;
-  }
-  #label-left, #label-right {
-    position: absolute;
-    bottom: 30px;
-    padding: 5px 12px;
-    font-size: 14px;
-    font-weight: bold;
-    background: rgba(255,255,255,0.85);
-    border-radius: 3px;
-    pointer-events: none;
-    font-family: Arial, sans-serif;
-    white-space: nowrap;
-    z-index: 1000;
-    transition: opacity 0.3s ease;
-  }
-  #label-right::after {
-    content: " ➔";
-  }
-  #label-left {
-    left: 10px;
-  }
-  #label-right {
-    right: 10px;
-  }
-  #stats {
+    text-align: center;
+    margin-bottom: 4px;
+}
+.label-map {
     position: absolute;
     bottom: 10px;
-    right: 10px;
-    width: 280px;
-    height: 180px;
-    background: rgba(255,255,255,0.9);
-    border-radius: 5px;
-    padding: 10px;
-    font-family: Arial, sans-serif;
-    z-index: 1000;
-  }
+    font-size: 11px;
+    padding: 3px 6px;
+    background: rgba(255,255,255,0.8);
+    border-radius: 4px;
+}
+.label-left { left: 10px; }
+.label-right { right: 10px; }
 </style>
 </head>
 <body>
 
-<div id="container">
-  <div id="after"></div> <!-- inversé: after à gauche -->
-  <div id="before"></div> <!-- before à droite -->
-</div>
+<div id="map"></div>
+<div id="label-left" class="label-map">⬅ Après 2020</div>
+<div id="label-right" class="label-map">Avant 2020 ➡</div>
 
-<div id="label-left">Après 2020</div>
-<div id="label-right">Avant 2020</div>
-
-<div id="legend" class="legend"></div>
-<div id="stats"><canvas id="chart"></canvas></div>
-
-<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.fullscreen/Control.FullScreen.js"></script>
+<script src="https://unpkg.com/leaflet-search/dist/leaflet-search.min.js"></script>
+<script src="https://unpkg.com/leaflet.sync/L.Map.Sync.min.js"></script>
+<script src="https://unpkg.com/leaflet-side-by-side/leaflet-side-by-side.js"></script>
 
 <script>
-mapboxgl.accessToken = 'pk.eyJ1IjoiamVqZTMzMDAwIiwiYSI6ImNtZTJ2c3RnaDAwczEyanF6bW9wODI0cTgifQ.AYOAKWDyDLP_fbKIz-QdwQ';
+// --- Cartes ---
+var mapBefore = L.map('map', {
+    fullscreenControl: true,
+    zoomControl: false
+}).setView([44.84, -0.58], 13);
 
-const centerBordeaux = [-0.57409, 44.861022];
+var mapAfter = L.map(document.createElement('div')).setView([44.84, -0.58], 13);
 
-// on inverse ici les conteneurs: "after" à gauche, "before" à droite
-const afterMap = new mapboxgl.Map({
-  container: 'after',
-  style: 'mapbox://styles/mapbox/dark-v11',
-  center: centerBordeaux,
-  zoom: 11.5
+var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
 });
-const beforeMap = new mapboxgl.Map({
-  container: 'before',
-  style: 'mapbox://styles/mapbox/dark-v11',
-  center: centerBordeaux,
-  zoom: 11.5
+osm.addTo(mapBefore);
+osm.addTo(mapAfter);
+
+// --- Données exemple ---
+var beforeLayer = L.geoJSON(beforeGeoJSON, {
+    style: { color: "orange", weight: 1, fillOpacity: 0.3 }
 });
-
-// On inverse l'ordre des maps dans compare pour correspondre au conteneur
-const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {});
-
-// Couches avant (sur beforeMap)
-const layersAvant = [
-  { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2020', data: null, totalCount: 0, visibleCount: 0 }
-];
-
-// Couches après (sur afterMap)
-const layersApres = [
-  { map: afterMap, id: 'apres1-layer', source: 'apres1', color: '#FF4500', label: 'Stations créées ou en cours', data: null, totalCount: 0, visibleCount: 0 },
-  { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Stations remplacées/densifiées', data: null, totalCount: 0, visibleCount: 0 },
-  { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'green', label: 'Stations non plantées', data: null, totalCount: 0, visibleCount: 0 }
-];
-
-let popup = null;
-
-async function addLayer(info) {
-  try {
-    const response = await fetch(info.source + '.geojson');
-    if (!response.ok) throw new Error('Erreur chargement ' + info.source + '.geojson');
-    const geojson = await response.json();
-    info.data = geojson;
-    info.totalCount = geojson.features.length;
-
-    info.map.addSource(info.source, {
-      type: 'geojson',
-      data: geojson
-    });
-
-    info.map.addLayer({
-      id: info.id,
-      type: 'fill',
-      source: info.source,
-      paint: {
-        'fill-color': info.color,
-        'fill-opacity': 0.6
-      }
-    });
-
-    // Surbrillance pour afterMap
-    if (info.map === afterMap) {
-      info.map.addLayer({
-        id: info.id + '-highlight',
-        type: 'fill',
-        source: info.source,
-        paint: {
-          'fill-color': '#ffff00',
-          'fill-opacity': 0.3
-        },
-        filter: ['==', 'fid', ''] // filtre vide par défaut
-      });
+var afterLayer = L.geoJSON(afterGeoJSON, {
+    style: { color: "green", weight: 1, fillOpacity: 0.3 },
+    onEachFeature: function (feature, layer) {
+        layer.bindPopup("CODE_STATION: " + feature.properties.CODE_STATION);
     }
-
-    info.map.addLayer({
-      id: info.id + '-label',
-      type: 'symbol',
-      source: info.source,
-      layout: {
-        'text-field': ['get', 'CODE_STATION'],
-        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-        'text-size': 11,
-        'text-offset': [0, 0],
-        'text-anchor': 'center',
-        'visibility': 'none'
-      },
-      paint: {
-        'text-color': info.color,
-        'text-halo-color': '#000',
-        'text-halo-width': 1
-      }
-    });
-
-    info.map.on('zoom', () => {
-      const zoom = info.map.getZoom();
-      const visibility = zoom >= 15 ? 'visible' : 'none';
-      if (info.map.getLayoutProperty(info.id + '-label', 'visibility') !== visibility) {
-        info.map.setLayoutProperty(info.id + '-label', 'visibility', visibility);
-      }
-    });
-
-    // Interaction popup clic
-    info.map.on('click', info.id, (e) => {
-      if (!e.features.length) return;
-      const feature = e.features[0];
-      const coordinates = e.lngLat;
-      const codeStation = feature.properties.CODE_STATION || 'N/A';
-
-      if (popup) popup.remove();
-
-      popup = new mapboxgl.Popup()
-        .setLngLat(coordinates)
-        .setHTML(`<strong>Code station:</strong> ${codeStation}`)
-        .addTo(info.map);
-    });
-
-    // Curseur pointer
-    info.map.on('mouseenter', info.id, () => {
-      info.map.getCanvas().style.cursor = 'pointer';
-    });
-    info.map.on('mouseleave', info.id, () => {
-      info.map.getCanvas().style.cursor = '';
-    });
-
-  } catch (err) {
-    console.error('Erreur chargement couche ' + info.source, err);
-  }
-}
-
-async function loadAllLayers() {
-  for (const layer of [...layersAvant, ...layersApres]) {
-    await addLayer(layer);
-  }
-}
-
-loadAllLayers().then(() => {
-  updateStats();
 });
+beforeLayer.addTo(mapBefore);
+afterLayer.addTo(mapAfter);
 
-const labelLeft = document.getElementById('label-left');
-const labelRight = document.getElementById('label-right');
-
-function updateLabels(sliderPos) {
-  labelLeft.style.opacity = sliderPos;
-  labelRight.style.opacity = 1 - sliderPos;
-}
-
-compare.on('slide', e => {
-  updateLabels(e.detail);
-  updateStats();
-});
-updateLabels(0);
-
-// Compter stations visibles dans la vue
-function countVisibleStations(layerInfo) {
-  if (!layerInfo.data) return 0;
-  const bounds = layerInfo.map.getBounds();
-
-  return layerInfo.data.features.filter(f => {
-    let coord = null;
-    // Géométrie peut être Point ou Polygone — on prend un point de référence
-    if (f.geometry.type === 'Point') {
-      coord = f.geometry.coordinates;
-    } else if (f.geometry.type === 'Polygon') {
-      coord = f.geometry.coordinates[0][0];
-    } else if (f.geometry.type === 'MultiPolygon') {
-      coord = f.geometry.coordinates[0][0][0];
+// --- Surbrillance ---
+var highlight;
+function highlightFeature(e) {
+    if (highlight) {
+        afterLayer.resetStyle(highlight);
     }
-    return coord ? bounds.contains(coord) : false;
-  }).length;
+    var layer = e.target;
+    layer.setStyle({
+        weight: 2,
+        color: '#ff0000',
+        fillOpacity: 0.3
+    });
+    highlight = layer;
 }
-
-// Mise à jour légende avec count total et count visible
-function createLegend() {
-  const legendDiv = document.getElementById('legend');
-  legendDiv.innerHTML = '';
-
-  const avantTitle = document.createElement('h4');
-  avantTitle.textContent = 'Avant 2020';
-  legendDiv.appendChild(avantTitle);
-  layersAvant.forEach(l => {
-    if(!l.data) return;
-    const item = document.createElement('div');
-    const colorBox = document.createElement('span');
-    colorBox.className = 'color-box';
-    colorBox.style.backgroundColor = l.color;
-    item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(`${l.label} (visible / total)`));
-    const countSpan = document.createElement('span');
-    countSpan.className = 'count';
-    countSpan.textContent = `${l.visibleCount} / ${l.totalCount}`;
-    item.appendChild(countSpan);
-    legendDiv.appendChild(item);
-  });
-
-  const apresTitle = document.createElement('h4');
-  apresTitle.textContent = 'Après 2020';
-  legendDiv.appendChild(apresTitle);
-  layersApres.forEach(l => {
-    if(!l.data) return;
-    const item = document.createElement('div');
-    const colorBox = document.createElement('span');
-    colorBox.className = 'color-box';
-    colorBox.style.backgroundColor = l.color;
-    item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(`${l.label} (visible / total)`));
-    const countSpan = document.createElement('span');
-    countSpan.className = 'count';
-    countSpan.textContent = `${l.visibleCount} / ${l.totalCount}`;
-    item.appendChild(countSpan);
-    legendDiv.appendChild(item);
-  });
-}
-
-const ctx = document.getElementById('chart').getContext('2d');
-
-const chart = new Chart(ctx, {
-  type: 'bar',
-  data: {
-    labels: [],
-    datasets: [{
-      label: 'Nombre stations visibles',
-      data: [],
-      backgroundColor: []
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: { beginAtZero: true }
-    },
-    plugins: {
-      legend: { display: false }
-    }
-  }
+afterLayer.eachLayer(function (layer) {
+    layer.on('click', highlightFeature);
 });
 
-// Met à jour stats et graphique
+// --- Sync ---
+mapBefore.sync(mapAfter);
+mapAfter.sync(mapBefore);
+
+// --- Swipe ---
+L.control.sideBySide(beforeLayer, afterLayer).addTo(mapBefore);
+
+// --- Légende ---
+var legend = L.control({ position: 'topleft' });
+legend.onAdd = function () {
+    var div = L.DomUtil.create('div', 'legend');
+    div.innerHTML = "<strong>Nombre total de stations</strong><br>" + afterLayer.getLayers().length;
+    return div;
+};
+legend.addTo(mapBefore);
+
+// --- Stats dynamiques ---
+var statsPanel = L.control({ position: 'topleft' });
+statsPanel.onAdd = function () {
+    var container = L.DomUtil.create('div');
+    var toggle = L.DomUtil.create('div', 'stats-toggle', container);
+    toggle.innerHTML = "📊 Stats";
+    var panel = L.DomUtil.create('div', 'stats-panel', container);
+    panel.innerHTML = "<div class='stats-title'>Nombre de stations après 2020 visibles</div><div id='stats-count'></div>";
+    toggle.onclick = function () {
+        panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
+    };
+    return container;
+};
+statsPanel.addTo(mapBefore);
+
+// Fonction de mise à jour stats
 function updateStats() {
-  [...layersAvant, ...layersApres].forEach(l => {
-    l.visibleCount = countVisibleStations(l);
-  });
-  createLegend();
-
-  const allLayers = [...layersAvant, ...layersApres];
-  chart.data.labels = allLayers.map(l => l.label);
-  chart.data.datasets[0].data = allLayers.map(l => l.visibleCount);
-  chart.data.datasets[0].backgroundColor = allLayers.map(l => l.color);
-  chart.update();
+    var count = 0;
+    afterLayer.eachLayer(function (layer) {
+        if (mapAfter.getBounds().intersects(layer.getBounds())) {
+            count++;
+        }
+    });
+    document.getElementById('stats-count').innerHTML = count;
 }
+mapAfter.on('moveend', updateStats);
+updateStats();
 
-// Mise à jour stats après mouvements et zooms
-beforeMap.on('moveend', updateStats);
-afterMap.on('moveend', updateStats);
+// --- Recherche ---
+var searchControl = new L.Control.Search({
+    layer: afterLayer,
+    propertyName: 'CODE_STATION',
+    marker: false,
+    moveToLocation: function (latlng, title, map) {
+        map.setView(latlng, 18);
+    }
+});
+searchControl.on('search:locationfound', function (e) {
+    if (highlight) {
+        afterLayer.resetStyle(highlight);
+    }
+    e.layer.setStyle({
+        weight: 2,
+        color: '#ff0000',
+        fillOpacity: 0.3
+    });
+    highlight = e.layer;
+    e.layer.openPopup();
+});
+mapBefore.addControl(searchControl);
+
+// --- Boutons zoom & nord ---
+L.control.zoom({ position: 'topright' }).addTo(mapBefore);
+L.control.compass = function (opts) {
+    var control = L.control({ position: opts.position });
+    control.onAdd = function () {
+        var div = L.DomUtil.create('div', 'leaflet-bar');
+        div.innerHTML = '<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Compass_icon.svg/48px-Compass_icon.svg.png" style="width:26px;height:26px;">';
+        return div;
+    };
+    return control;
+};
+L.control.compass({ position: 'topright' }).addTo(mapBefore);
 
 </script>
 </body>
