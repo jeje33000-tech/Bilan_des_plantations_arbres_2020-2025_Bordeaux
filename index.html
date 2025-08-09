@@ -164,7 +164,7 @@ async function addLayer(info) {
           'text-size': 10,
           'text-offset': [0, 0.6],
           'text-anchor': 'top',
-          'visibility': 'none' // cachée par défaut, visible à zoom >= 20
+          'visibility': 'none' // cachée par défaut, visible à zoom >= 15
         },
         paint: {
           'text-color': info.color
@@ -176,7 +176,7 @@ async function addLayer(info) {
         const props = e.features[0].properties;
         new mapboxgl.Popup()
           .setLngLat(e.lngLat)
-          .setHTML(`<strong>Code station:</strong> ${props.CODE_STATION}`)
+          .setHTML(` ${props.CODE_STATION}`)
           .addTo(info.map);
       });
 
@@ -191,7 +191,7 @@ async function addLayer(info) {
       // Afficher/cacher labels à zoom >= 20
       info.map.on('zoom', () => {
         const zoom = info.map.getZoom();
-        if (zoom >= 20) {
+        if (zoom >= 15) {
           info.map.setLayoutProperty('apres1-label-layer', 'visibility', 'visible');
         } else {
           info.map.setLayoutProperty('apres1-label-layer', 'visibility', 'none');
@@ -223,3 +223,4 @@ function createLegend() {
   layersAvant.forEach(l => {
     if(!l.data) return; // ignore si pas chargé
     const item = document.createElement
+
