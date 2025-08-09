@@ -117,7 +117,7 @@ const beforeMap = new mapboxgl.Map({
 });
 
 // On inverse l'ordre des maps dans compare pour correspondre au conteneur
-const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {});
+const compare = new mapboxgl.Compare(afterMap, beforeMap, {});
 
 // Couches avant (sur beforeMap)
 const layersAvant = [
@@ -132,6 +132,7 @@ const layersApres = [
 ];
 
 let popup = null;
+let sliderPosition = 0; // Position du curseur de 0 (tout à gauche) à 1 (tout à droite)
 
 async function addLayer(info) {
   try {
@@ -244,12 +245,13 @@ function updateLabels(sliderPos) {
 }
 
 compare.on('slide', e => {
-  updateLabels(e.detail);
+  sliderPosition = e.detail;
+  updateLabels(sliderPosition);
   updateStats();
 });
 updateLabels(0);
 
-// Compter stations visibles dans la vue
+// Compter stations visibles dans la vue, en filtrant sur la partie visible après selon sliderPosition
 function countVisibleStations(layerInfo) {
   if (!layerInfo.data) return 0;
   const bounds = layerInfo.map.getBounds();
@@ -263,7 +265,20 @@ function countVisibleStations(layerInfo) {
     } else if (f.geometry.type === 'MultiPolygon') {
       coord = f.geometry.coordinates[0][0][0];
     }
-    return coord ? bounds.contains(coord) : false;
+    if (!coord) return false;
+
+    if (!bounds.contains(coord)) return false;
+
+    if (layerInfo.map === afterMap) {
+      // On projette la coord en pixels pour vérifier la visibilité avec le curseur
+      const pixel = layerInfo.map.project(coord);
+      const containerWidth = layerInfo.map.getContainer().clientWidth;
+      const sliderPixel = sliderPosition * containerWidth;
+      // On compte seulement si le point est à gauche du curseur (visible)
+      if (pixel.x > sliderPixel) return false;
+    }
+
+    return true;
   }).length;
 }
 
@@ -282,11 +297,8 @@ function createLegend() {
     colorBox.className = 'color-box';
     colorBox.style.backgroundColor = l.color;
     item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(`${l.label} (total)`));
-    const countSpan = document.createElement('span');
-    countSpan.className = 'count';
-    countSpan.textContent = `${l.totalCount}`;
-    item.appendChild(countSpan);
+    // Suppression du nombre dans la légende
+    item.appendChild(document.createTextNode(l.label));
     legendDiv.appendChild(item);
   });
 
@@ -300,11 +312,8 @@ function createLegend() {
     colorBox.className = 'color-box';
     colorBox.style.backgroundColor = l.color;
     item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(`${l.label} (total)`));
-    const countSpan = document.createElement('span');
-    countSpan.className = 'count';
-    countSpan.textContent = `${l.totalCount}`;
-    item.appendChild(countSpan);
+    // Suppression du nombre dans la légende
+    item.appendChild(document.createTextNode(l.label));
     legendDiv.appendChild(item);
   });
 }
@@ -356,4 +365,3 @@ beforeMap.on('move', updateStats);
 
 </body>
 </html>
-
