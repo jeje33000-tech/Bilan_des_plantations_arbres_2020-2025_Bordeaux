@@ -1,1 +1,615 @@
 
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Swipe Avant/Après - Plusieurs couches dynamiques</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" rel="stylesheet" />
+<style>
+  html, body, #container {
+    margin: 0; padding: 0; height: 100%;
+    font-family: Arial, sans-serif;
+  }
+  #container {
+    position: relative;
+  }
+  #before, #after {
+    position: absolute; top: 0; bottom: 0; width: 100%;
+  }
+  /* Swipe container */
+  #swipe-container {
+    position: absolute; top: 0; bottom: 0; left: 0; right: 0;
+  }
+
+  /* Légende */
+  .legend {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(255,255,255,0.9);
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 13px;
+    max-width: 300px;
+    z-index: 1100;
+  }
+  .legend h4 {
+    margin: 0 0 6px 0;
+    font-weight: bold;
+    font-size: 14px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 2px;
+  }
+  .legend div {
+    display: flex;
+    align-items: center;
+    margin: 2px 0;
+  }
+  .legend span.color-box {
+    width: 16px;
+    height: 14px;
+    margin-right: 8px;
+    border: 1px solid #555;
+    flex-shrink: 0;
+  }
+  .legend span.count {
+    margin-left: auto;
+    font-weight: bold;
+    color: #333;
+  }
+
+  /* Labels dynamiques en bas */
+  #label-left, #label-right {
+    position: absolute;
+    bottom: 30px;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: bold;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 3px;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 1100;
+    transition: opacity 0.3s ease;
+    font-family: Arial, sans-serif;
+  }
+  #label-left {
+    left: 10px;
+  }
+  #label-right {
+    right: 10px;
+  }
+  #label-right::after {
+    content: " ➔";
+  }
+
+  /* Stats panel with toggle button */
+  #stats-toggle-btn {
+    position: absolute;
+    top: 100px;
+    left: 10px;
+    z-index: 1150;
+    padding: 6px 10px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+  }
+  #stats {
+    position: absolute;
+    top: 140px;
+    left: 10px;
+    width: 300px;
+    height: 200px;
+    background: rgba(255,255,255,0.95);
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 13px;
+    overflow-y: auto;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    z-index: 1100;
+  }
+  #stats h4 {
+    margin-top: 0;
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 4px;
+  }
+
+  /* Search input */
+  #search-container {
+    position: absolute;
+    top: 60px;
+    left: 10px;
+    z-index: 1150;
+    background: rgba(255,255,255,0.9);
+    border-radius: 4px;
+    padding: 4px 8px;
+    width: 300px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  #search-input {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 14px;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+  }
+  #search-results {
+    max-height: 140px;
+    overflow-y: auto;
+    margin-top: 4px;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    background: white;
+    display: none;
+  }
+  #search-results div {
+    padding: 5px 8px;
+    cursor: pointer;
+  }
+  #search-results div:hover {
+    background-color: #eee;
+  }
+
+  /* Map controls positioning */
+  .mapboxgl-ctrl-top-right {
+    top: 10px !important;
+    right: 10px !important;
+  }
+</style>
+</head>
+<body>
+
+<div id="container">
+  <div id="swipe-container">
+    <div id="before"></div>
+    <div id="after"></div>
+  </div>
+
+  <div id="label-left">Après 2020</div>
+  <div id="label-right">Avant 2020</div>
+
+  <div class="legend" id="legend"></div>
+
+  <button id="stats-toggle-btn">Masquer statistiques</button>
+  <div id="stats">
+    <h4>Nombre de stations après 2020 visibles</h4>
+    <canvas id="chart"></canvas>
+  </div>
+
+  <div id="search-container">
+    <input type="text" id="search-input" placeholder="Recherche code station..." autocomplete="off" />
+    <div id="search-results"></div>
+  </div>
+</div>
+
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoiamVqZTMzMDAwIiwiYSI6ImNtZTJ2c3RnaDAwczEyanF6bW9wODI0cTgifQ.AYOAKWDyDLP_fbKIz-QdwQ';
+
+const centerBordeaux = [-0.57409, 44.861022];
+
+const afterMap = new mapboxgl.Map({
+  container: 'after',
+  style: 'mapbox://styles/mapbox/dark-v11',
+  center: centerBordeaux,
+  zoom: 11.5
+});
+const beforeMap = new mapboxgl.Map({
+  container: 'before',
+  style: 'mapbox://styles/mapbox/dark-v11',
+  center: centerBordeaux,
+  zoom: 11.5
+});
+
+// Ajout des contrôles classiques sur afterMap (zoom + nord)
+afterMap.addControl(new mapboxgl.NavigationControl({showCompass:true}), 'top-right');
+
+const compare = new mapboxgl.Compare(afterMap, beforeMap, '#swipe-container', {
+  // swipe div conteneur
+  // default position slider à gauche (après)
+  orientation: 'vertical'
+});
+
+// Synchronisation zoom/pan avec protection anti-boucle
+let isSyncing = false;
+beforeMap.on('move', () => {
+  if (isSyncing) return;
+  isSyncing = true;
+  const center = beforeMap.getCenter();
+  const zoom = beforeMap.getZoom();
+  const bearing = beforeMap.getBearing();
+  const pitch = beforeMap.getPitch();
+  afterMap.jumpTo({ center, zoom, bearing, pitch });
+  isSyncing = false;
+});
+afterMap.on('move', () => {
+  if (isSyncing) return;
+  isSyncing = true;
+  const center = afterMap.getCenter();
+  const zoom = afterMap.getZoom();
+  const bearing = afterMap.getBearing();
+  const pitch = afterMap.getPitch();
+  beforeMap.jumpTo({ center, zoom, bearing, pitch });
+  isSyncing = false;
+});
+
+// Mise à jour labels dynamique au slider
+compare.on('slide', (e) => {
+  updateLabels(e.detail);
+});
+
+afterMap.on('load', () => {
+  beforeMap.on('load', () => {
+    compare.setSliderPosition(0);
+    updateLabels(0);
+  });
+});
+
+const urlMapGeojson = {
+  avant: 'https://raw.githubusercontent.com/jeje33000-tech/Bilan-Swipe2/8cb9ce944e2aa14f7305db3f32676de2923660a2/avant.geojson',
+  apres1: 'https://raw.githubusercontent.com/jeje33000-tech/Bilan-Swipe2/8cb9ce944e2aa14f7305db3f32676de2923660a2/apres1.geojson',
+  apres2: 'https://raw.githubusercontent.com/jeje33000-tech/Bilan-Swipe2/8cb9ce944e2aa14f7305db3f32676de2923660a2/apres2.geojson',
+  apres3: 'https://raw.githubusercontent.com/jeje33000-tech/Bilan-Swipe2/8cb9ce944e2aa14f7305db3f32676de2923660a2/apres3.geojson'
+};
+
+let geoAvant, geoApres1, geoApres2, geoApres3;
+let stationsAll = [];  // Pour la recherche
+
+// Charger tous les geojson en parallèle
+async function loadAllGeojson() {
+  const responses = await Promise.all([
+    fetch(urlMapGeojson.avant), fetch(urlMapGeojson.apres1),
+    fetch(urlMapGeojson.apres2), fetch(urlMapGeojson.apres3)
+  ]);
+  const jsons = await Promise.all(responses.map(r => r.json()));
+
+  geoAvant = jsons[0];
+  geoApres1 = jsons[1];
+  geoApres2 = jsons[2];
+  geoApres3 = jsons[3];
+
+  // Fusion des 3 geojson après
+  geoApresAll = {
+    type: 'FeatureCollection',
+    features: geoApres1.features.concat(geoApres2.features).concat(geoApres3.features)
+  };
+
+  stationsAll = geoApresAll.features.map(f => ({
+    code: f.properties.CODE,
+    coords: f.geometry.coordinates,
+    properties: f.properties
+  }));
+
+  addSourcesAndLayers();
+  buildLegend();
+  updateStats();
+  setupSearch();
+}
+
+function addSourcesAndLayers() {
+  // Sources avant/après
+  beforeMap.addSource('avant-source', { type: 'geojson', data: geoAvant });
+  afterMap.addSource('apres-source1', { type: 'geojson', data: geoApres1 });
+  afterMap.addSource('apres-source2', { type: 'geojson', data: geoApres2 });
+  afterMap.addSource('apres-source3', { type: 'geojson', data: geoApres3 });
+
+  // Layer avant: rouge cercle
+  beforeMap.addLayer({
+    id: 'avant-points',
+    type: 'circle',
+    source: 'avant-source',
+    paint: {
+      'circle-radius': 6,
+      'circle-color': '#d62728',
+      'circle-stroke-width': 1,
+      'circle-stroke-color': '#fff'
+    }
+  });
+  // Labels avant
+  beforeMap.addLayer({
+    id: 'avant-labels',
+    type: 'symbol',
+    source: 'avant-source',
+    layout: {
+      'text-field': ['get', 'CODE'],
+      'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+      'text-size': 12,
+      'text-offset': [0, 1.4],
+      'text-anchor': 'top'
+    },
+    paint: {
+      'text-color': '#d62728'
+    }
+  });
+
+  // Layers après: 3 sources, couleurs différentes
+  const colorBySource = {
+    'apres-source1': '#1f77b4', // bleu
+    'apres-source2': '#2ca02c', // vert
+    'apres-source3': '#ff7f0e'  // orange
+  };
+
+  Object.entries(colorBySource).forEach(([sourceId, color]) => {
+    afterMap.addLayer({
+      id: sourceId + '-points',
+      type: 'circle',
+      source: sourceId,
+      paint: {
+        'circle-radius': 6,
+        'circle-color': color,
+        'circle-stroke-width': 1,
+        'circle-stroke-color': '#fff'
+      }
+    });
+    afterMap.addLayer({
+      id: sourceId + '-labels',
+      type: 'symbol',
+      source: sourceId,
+      layout: {
+        'text-field': ['get', 'CODE'],
+        'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+        'text-size': 12,
+        'text-offset': [0, 1.4],
+        'text-anchor': 'top'
+      },
+      paint: {
+        'text-color': color
+      }
+    });
+  });
+
+  // Clic sur point après pour surbrillance et label
+  afterMap.on('click', (e) => {
+    const features = afterMap.queryRenderedFeatures(e.point, {
+      layers: ['apres-source1-points', 'apres-source2-points', 'apres-source3-points']
+    });
+    if (!features.length) return;
+    const feat = features[0];
+
+    // Supprimer ancien highlight
+    if (afterMap.getLayer('highlight-point')) {
+      afterMap.removeLayer('highlight-point');
+      afterMap.removeSource('highlight-point');
+    }
+    // Ajouter source/layer pour highlight
+    afterMap.addSource('highlight-point', {
+      type: 'geojson',
+      data: {
+        type: 'FeatureCollection',
+        features: [feat]
+      }
+    });
+    afterMap.addLayer({
+      id: 'highlight-point',
+      type: 'circle',
+      source: 'highlight-point',
+      paint: {
+        'circle-radius': 10,
+        'circle-color': 'yellow',
+        'circle-opacity': 0.6,
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#333'
+      }
+    });
+
+    // Centrer et zoomer sur point
+    afterMap.flyTo({center: feat.geometry.coordinates, zoom: 15});
+  });
+
+  // Survol curseur change curseur pointeur sur points après
+  afterMap.on('mouseenter', ['apres-source1-points', 'apres-source2-points', 'apres-source3-points'], () => {
+    afterMap.getCanvas().style.cursor = 'pointer';
+  });
+  afterMap.on('mouseleave', ['apres-source1-points', 'apres-source2-points', 'apres-source3-points'], () => {
+    afterMap.getCanvas().style.cursor = '';
+  });
+
+  // Actualisation stats à chaque mouvement (sur après)
+  afterMap.on('move', () => {
+    updateStats();
+  });
+  afterMap.on('zoom', () => {
+    updateStats();
+  });
+}
+
+function buildLegend() {
+  const legend = document.getElementById('legend');
+  legend.innerHTML = `<h4>Nombre total de stations</h4>`;
+  const colors = {
+    'Avant 2020': '#d62728',
+    'Après 2020 (apres1)': '#1f77b4',
+    'Après 2020 (apres2)': '#2ca02c',
+    'Après 2020 (apres3)': '#ff7f0e'
+  };
+
+  Object.entries(colors).forEach(([label, color]) => {
+    const div = document.createElement('div');
+    div.innerHTML = `<span class="color-box" style="background:${color}"></span> ${label} <span class="count" id="legend-count-${label.replace(/\s+/g,'')}">0</span>`;
+    legend.appendChild(div);
+  });
+
+  // Comptage total
+  const total = geoAvant.features.length + geoApres1.features.length + geoApres2.features.length + geoApres3.features.length;
+  legend.innerHTML += `<div style="margin-top:8px; font-weight:bold;">Total stations: ${total}</div>`;
+
+  // Mise à jour counts statiques pour avant et après total (car ils ne bougent pas)
+  document.getElementById('legend-count-Avant2020').textContent = geoAvant.features.length;
+  document.getElementById('legend-count-Après2020(apres1)').textContent = geoApres1.features.length;
+  document.getElementById('legend-count-Après2020(apres2)').textContent = geoApres2.features.length;
+  document.getElementById('legend-count-Après2020(apres3)').textContent = geoApres3.features.length;
+}
+
+function updateStats() {
+  // Récupère bbox visible après
+  const bounds = afterMap.getBounds();
+
+  // Trouve points dans bbox parmi 3 couches après
+  function countVisibleFeatures(features) {
+    return features.filter(f => {
+      const [lon, lat] = f.geometry.coordinates;
+      return bounds.contains([lon, lat]);
+    }).length;
+  }
+
+  const count1 = countVisibleFeatures(geoApres1.features);
+  const count2 = countVisibleFeatures(geoApres2.features);
+  const count3 = countVisibleFeatures(geoApres3.features);
+
+  // Mise à jour legend dynamique (optionnel)
+  // document.getElementById('legend-count-Après2020(apres1)').textContent = count1;
+  // document.getElementById('legend-count-Après2020(apres2)').textContent = count2;
+  // document.getElementById('legend-count-Après2020(apres3)').textContent = count3;
+
+  // Mise à jour stats détaillées
+  const ctx = document.getElementById('chart').getContext('2d');
+  if(window.chartInstance) {
+    window.chartInstance.data.datasets[0].data = [count1, count2, count3];
+    window.chartInstance.update();
+  } else {
+    window.chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Apres1', 'Apres2', 'Apres3'],
+        datasets: [{
+          label: 'Stations visibles',
+          data: [count1, count2, count3],
+          backgroundColor: ['#1f77b4', '#2ca02c', '#ff7f0e']
+        }]
+      },
+      options: {
+        responsive: true,
+        animation: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            precision: 0,
+            stepSize: 1
+          }
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  }
+}
+
+// Mise à jour labels bas à chaque slide
+function updateLabels(pos) {
+  const labelLeft = document.getElementById('label-left');
+  const labelRight = document.getElementById('label-right');
+  // pos = 0 => slider à gauche => après visible
+  // pos = 1 => slider à droite => avant visible
+  if (pos < 0.5) {
+    labelLeft.style.opacity = 1;
+    labelRight.style.opacity = 0.3;
+  } else {
+    labelLeft.style.opacity = 0.3;
+    labelRight.style.opacity = 1;
+  }
+}
+
+// Toggle stats panel
+const statsToggleBtn = document.getElementById('stats-toggle-btn');
+const statsPanel = document.getElementById('stats');
+statsToggleBtn.addEventListener('click', () => {
+  if (statsPanel.style.display === 'none' || statsPanel.style.display === '') {
+    statsPanel.style.display = 'block';
+    statsToggleBtn.textContent = 'Masquer statistiques';
+  } else {
+    statsPanel.style.display = 'none';
+    statsToggleBtn.textContent = 'Afficher statistiques';
+  }
+});
+
+// Recherche code station avec auto-complétion et zoom sur résultat
+function setupSearch() {
+  const input = document.getElementById('search-input');
+  const resultsDiv = document.getElementById('search-results');
+
+  input.addEventListener('input', () => {
+    const val = input.value.trim().toLowerCase();
+    if(val.length < 2) {
+      resultsDiv.style.display = 'none';
+      resultsDiv.innerHTML = '';
+      return;
+    }
+    const matches = stationsAll.filter(s => s.code.toLowerCase().includes(val)).slice(0,10);
+    if(matches.length === 0) {
+      resultsDiv.innerHTML = '<div>Aucun résultat</div>';
+      resultsDiv.style.display = 'block';
+      return;
+    }
+    resultsDiv.innerHTML = matches.map(s => `<div data-code="${s.code}">${s.code}</div>`).join('');
+    resultsDiv.style.display = 'block';
+  });
+
+  resultsDiv.addEventListener('click', (e) => {
+    if(e.target && e.target.dataset.code) {
+      const code = e.target.dataset.code;
+      const station = stationsAll.find(s => s.code === code);
+      if(station) {
+        afterMap.flyTo({center: station.coords, zoom: 15});
+        resultsDiv.style.display = 'none';
+        input.value = code;
+
+        // Mettre en surbrillance la station
+        if (afterMap.getLayer('highlight-point')) {
+          afterMap.removeLayer('highlight-point');
+          afterMap.removeSource('highlight-point');
+        }
+        afterMap.addSource('highlight-point', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [{
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: station.coords
+              },
+              properties: {}
+            }]
+          }
+        });
+        afterMap.addLayer({
+          id: 'highlight-point',
+          type: 'circle',
+          source: 'highlight-point',
+          paint: {
+            'circle-radius': 10,
+            'circle-color': 'yellow',
+            'circle-opacity': 0.6,
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#333'
+          }
+        });
+      }
+    }
+  });
+
+  // Clic ailleurs ferme la liste
+  document.addEventListener('click', (e) => {
+    if(!e.target.closest('#search-container')) {
+      resultsDiv.style.display = 'none';
+    }
+  });
+}
+
+loadAllGeojson();
+</script>
+
+</body>
+</html>
+
