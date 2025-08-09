@@ -2,55 +2,29 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<title>Swipe Avant/Après - Plusieurs couches dynamiques</title>
+<title>Swipe Avant/Après - Popups à zoom 20+</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
 <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" rel="stylesheet" />
 <style>
   body { margin:0; padding:0; }
   #before, #after { position:absolute; top:0; bottom:0; width:100%; }
-  
-  /* Légende plus petite et à gauche */
+
+  /* Légende petite et à gauche */
   .legend {
     position: absolute;
     top: 10px;
     left: 10px;
     background: rgba(255,255,255,0.9);
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: 5px;
     font-family: Arial, sans-serif;
     font-size: 10px;
     z-index: 1000;
-    max-width: 150px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    max-width: 200px;
   }
-  .legend h4 {
-    margin: 0 0 4px 0;
-    font-size: 11px;
-    font-weight: bold;
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-  .legend div {
-    display: flex;
-    align-items: center;
-  }
-  .legend span.color-box {
-    width: 14px;
-    height: 10px;
-    margin-right: 6px;
-    border: 1px solid #555;
-    flex-shrink: 0;
-  }
-  .legend span.count {
-    margin-left: 4px;
-    font-weight: bold;
-    color: #333;
-  }
-  
-  /* Labels dynamiques inversés et plus petits */
+
+  /* Labels inversés et plus petits */
   #label-left, #label-right {
     position: absolute;
     top: 50%;
@@ -64,25 +38,7 @@
     font-size: 12px;
     z-index: 1000;
     white-space: nowrap;
-    transition: opacity 0.3s ease, left 0.3s ease, right 0.3s ease;
-  }
-  #label-left {
-    left: 10px;
-  }
-  #label-right {
-    right: 10px;
-  }
-  #label-left::after {
-    content: ' ➔';
-  }
-  #label-right::after {
-    content: '';
-  }
-
-  /* Boutons zoom et nord */
-  .mapboxgl-ctrl-top-right {
-    top: 10px !important;
-    right: 10px !important;
+    transition: opacity 0.3s ease;
   }
 </style>
 </head>
@@ -91,8 +47,8 @@
 <div id="before"></div>
 <div id="after"></div>
 
-<div id="label-left">Après 2020</div>
-<div id="label-right">Avant 2020</div>
+<div id="label-left">Après 2020 ➔</div>
+<div id="label-right">⬅ Avant 2020</div>
 
 <div id="legend" class="legend"></div>
 
@@ -119,25 +75,34 @@ const afterMap = new mapboxgl.Map({
 
 const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
 
-// Position slider initial
-afterMap.on('load', () => {
-  beforeMap.on('load', () => {
-    compare.setSliderPosition(0);
-    updateLabels(0);
-  });
-});
+// Labels dynamiques inversés
+const labelLeft = document.getElementById('label-left');
+const labelRight = document.getElementById('label-right');
+function updateLabels(position) {
+  const sliderX = window.innerWidth * position;
+  // Inversé: labelLeft = après, labelRight = avant
+  labelLeft.style.left = (sliderX + 10) + 'px';
+  labelRight.style.left = (sliderX - labelRight.offsetWidth - 10) + 'px';
+  labelLeft.style.opacity = position;
+  labelRight.style.opacity = 1 - position;
+}
+compare.on('slide', (e) => updateLabels(e.detail));
+afterMap.on('load', () => beforeMap.on('load', () => {
+  compare.setSliderPosition(0);
+  updateLabels(0);
+}));
 
-// Définition des couches
+// Couches avec données et couleur
 const layersAvant = [
   { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2020', data: null, count: 0 }
 ];
-
 const layersApres = [
   { map: afterMap, id: 'apres1-layer', source: 'apres1', color: '#FF4500', label: 'Stations créées ou en cours', data: null, count: 0 },
   { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Stations remplacées/densifiées', data: null, count: 0 },
   { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'green', label: 'Stations non plantées', data: null, count: 0 }
 ];
 
+// Charger données, ajouter couches et gérer popups
 async function addLayer(info) {
   try {
     const response = await fetch(info.source + '.geojson');
@@ -150,7 +115,6 @@ async function addLayer(info) {
       type: 'geojson',
       data: geojson
     });
-    // couche fill
     info.map.addLayer({
       id: info.id,
       type: 'fill',
@@ -161,35 +125,34 @@ async function addLayer(info) {
       }
     });
 
-    // couche symbol pour labels CODE_STATION à zoom ≥ 20
-    info.map.addLayer({
-      id: info.id + '-label',
-      type: 'symbol',
-      source: info.source,
-      layout: {
-        'text-field': [
-          'case',
-          ['>=', ['zoom'], 20],
-          ['get', 'CODE_STATION'],
-          ''
-        ],
-        'text-size': 12,
-        'text-anchor': 'center',
-        'text-offset': [0, 0]
-      },
-      paint: {
-        'text-color': '#000',
-        'text-halo-color': '#fff',
-        'text-halo-width': 1
+    // Popup au clic à partir du zoom 20
+    info.map.on('click', info.id, (e) => {
+      if (info.map.getZoom() >= 20) {
+        const feature = e.features[0];
+        const coordinates = e.lngLat;
+        const codeStation = feature.properties.CODE_STATION || 'N/A';
+        new mapboxgl.Popup()
+          .setLngLat(coordinates)
+          .setHTML(`<strong>CODE_STATION:</strong> ${codeStation}`)
+          .addTo(info.map);
       }
     });
 
-    createLegend(); // Actualise la légende après ajout de chaque couche
+    // Changement curseur sur survol
+    info.map.on('mouseenter', info.id, () => {
+      info.map.getCanvas().style.cursor = 'pointer';
+    });
+    info.map.on('mouseleave', info.id, () => {
+      info.map.getCanvas().style.cursor = '';
+    });
+
+    createLegend();
   } catch (err) {
     console.error('Erreur chargement couche ' + info.source, err);
   }
 }
 
+// Charger toutes les couches
 async function loadAllLayers() {
   for (const layer of [...layersAvant, ...layersApres]) {
     await addLayer(layer);
@@ -201,53 +164,49 @@ function createLegend() {
   const legendDiv = document.getElementById('legend');
   legendDiv.innerHTML = '';
 
-  // Bloc Avant
+  // Avant
   const avantTitle = document.createElement('h4');
   avantTitle.textContent = 'Avant 2020';
   legendDiv.appendChild(avantTitle);
   layersAvant.forEach(l => {
-    if(!l.data) return; // ignore si pas chargé
+    if (!l.data) return;
     const item = document.createElement('div');
     const colorBox = document.createElement('span');
     colorBox.className = 'color-box';
     colorBox.style.backgroundColor = l.color;
+    colorBox.style.display = 'inline-block';
+    colorBox.style.width = '12px';
+    colorBox.style.height = '10px';
+    colorBox.style.marginRight = '6px';
     item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(l.label));
-    const countSpan = document.createElement('span');
-    countSpan.className = 'count';
-    countSpan.textContent = `(${l.count})`;
-    item.appendChild(countSpan);
+    item.appendChild(document.createTextNode(l.label + ' (' + l.count + ')'));
     legendDiv.appendChild(item);
   });
 
-  // Bloc Après
+  // Après
   const apresTitle = document.createElement('h4');
   apresTitle.textContent = 'Après 2020';
   legendDiv.appendChild(apresTitle);
   layersApres.forEach(l => {
-    if(!l.data) return;
+    if (!l.data) return;
     const item = document.createElement('div');
     const colorBox = document.createElement('span');
     colorBox.className = 'color-box';
     colorBox.style.backgroundColor = l.color;
+    colorBox.style.display = 'inline-block';
+    colorBox.style.width = '12px';
+    colorBox.style.height = '10px';
+    colorBox.style.marginRight = '6px';
     item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(l.label));
-    const countSpan = document.createElement('span');
-    countSpan.className = 'count';
-    countSpan.textContent = `(${l.count})`;
-    item.appendChild(countSpan);
+    item.appendChild(document.createTextNode(l.label + ' (' + l.count + ')'));
     legendDiv.appendChild(item);
   });
 }
 
-// Labels dynamiques
-const labelLeft = document.getElementById('label-left');
-const labelRight = document.getElementById('label-right');
+// Contrôles zoom et boussole
+beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+afterMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
 
-function updateLabels(position) {
-  const windowWidth = window.innerWidth;
-  const sliderX = windowWidth * position;
-
-  // Inverser les positions et opacités
-  labelLeft.style.left = (sliderX + 10) + 'px';
-  labelR
+</script>
+</body>
+</html>
