@@ -2,83 +2,77 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<title>Swipe Avant/Après - Plusieurs couches</title>
+<title>Swipe Avant/Après - Plusieurs couches dynamiques</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
 <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" rel="stylesheet" />
-
 <style>
   body { margin:0; padding:0; }
   #before, #after { position:absolute; top:0; bottom:0; width:100%; }
-
+  
+  /* Légende en haut, plus petite */
   .legend {
     position: absolute;
     top: 10px;
-    left: 10px;
-    background: rgba(255,255,255,0.85);
-    padding: 6px 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.9);
+    padding: 6px 12px;
     border-radius: 5px;
     font-family: Arial, sans-serif;
     font-size: 12px;
-    z-index: 1100;
-    max-width: 220px;
+    z-index: 1000;
+    max-width: 400px;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: center;
   }
   .legend h4 {
-    margin: 3px 0 5px;
+    margin: 0 8px 0 0;
     font-size: 13px;
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 2px;
+    border-bottom: none;
+    padding-bottom: 0;
   }
   .legend div {
     display: flex;
     align-items: center;
-    margin-bottom: 3px;
+    margin: 0 5px;
   }
-  .legend span {
-    display: inline-block;
+  .legend span.color-box {
     width: 18px;
     height: 12px;
     margin-right: 6px;
+    border: 1px solid #555;
+    flex-shrink: 0;
   }
-  .legend .count {
-    margin-left: auto;
+  .legend span.count {
+    margin-left: 4px;
     font-weight: bold;
+    color: #333;
   }
-
-  /* Labels dynamiques améliorés */
+  
+  /* Labels dynamiques */
   #label-left, #label-right {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
     padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.8);
     font-weight: bold;
     border-radius: 4px;
     pointer-events: none;
     font-family: Arial, sans-serif;
     font-size: 14px;
-    z-index: 1200;
+    z-index: 1000;
     white-space: nowrap;
-    color: #222;
-    text-shadow: 1px 1px 2px rgba(255,255,255,0.7);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-    transition: opacity 0.3s ease, left 0.3s ease;
-  }
-  #label-left::after {
-    content: '←';
-    margin-left: 6px;
-    font-weight: normal;
-  }
-  #label-right::before {
-    content: '→';
-    margin-right: 6px;
-    font-weight: normal;
+    transition: opacity 0.3s ease;
   }
 
-  /* Controls container to avoid overlap */
+  /* Boutons zoom et nord */
   .mapboxgl-ctrl-top-right {
-    top: 10px;
-    right: 10px;
+    top: 10px !important;
+    right: 10px !important;
   }
 </style>
 </head>
@@ -106,7 +100,6 @@ const beforeMap = new mapboxgl.Map({
   center: centerBordeaux,
   zoom: 11.5
 });
-
 const afterMap = new mapboxgl.Map({
   container: 'after',
   style: 'mapbox://styles/mapbox/dark-v11',
@@ -116,37 +109,7 @@ const afterMap = new mapboxgl.Map({
 
 const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
 
-// Labels dynamiques
-const labelLeft = document.getElementById('label-left');
-const labelRight = document.getElementById('label-right');
-
-function updateLabels(position) {
-  const sliderX = window.innerWidth * position;
-
-  // Limites pour que labels ne dépassent pas l'écran
-  const minLeftLabelX = 10; 
-  const maxLeftLabelX = window.innerWidth - labelLeft.offsetWidth - 10;
-  const minRightLabelX = 10;
-  const maxRightLabelX = window.innerWidth - labelRight.offsetWidth - 10;
-
-  let leftLabelX = sliderX - labelLeft.offsetWidth - 10;
-  let rightLabelX = sliderX + 10;
-
-  leftLabelX = Math.min(Math.max(leftLabelX, minLeftLabelX), maxLeftLabelX);
-  rightLabelX = Math.min(Math.max(rightLabelX, minRightLabelX), maxRightLabelX);
-
-  labelLeft.style.left = leftLabelX + 'px';
-  labelRight.style.left = rightLabelX + 'px';
-
-  labelLeft.style.opacity = position;
-  labelRight.style.opacity = 1 - position;
-}
-
-compare.on('slide', (e) => {
-  updateLabels(e.detail);
-});
-
-// Initial update on load
+// Position slider initial
 afterMap.on('load', () => {
   beforeMap.on('load', () => {
     compare.setSliderPosition(0);
@@ -154,22 +117,28 @@ afterMap.on('load', () => {
   });
 });
 
-// Exemple de couches (les fichiers .geojson doivent exister côté serveur)
+// Définition des couches
 const layersAvant = [
-  { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2020', count: 124 }
+  { map: beforeMap, id: 'avant-layer', source: 'avant', color: '#F0FFFF', label: 'Stations avant 2020', data: null, count: 0 }
 ];
 
 const layersApres = [
-  { map: afterMap, id: 'apres1-layer', source: 'apres1', color: 'red', label: 'Stations créées ou en cours', count: 35 },
-  { map: afterMap, id: 'apres2-layer', source: 'apres2', color: '#FFFF00', label: 'Stations remplacées/densifiées', count: 48 },
-  { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'green', label: 'Stations non plantées', count: 16 }
+  { map: afterMap, id: 'apres1-layer', source: 'apres1', color: '#FF4500', label: 'Stations créées ou en cours', data: null, count: 0 },
+  { map: afterMap, id: 'apres2-layer', source: 'apres2', color: '#00FA9A', label: 'Stations remplacées/densifiées', data: null, count: 0 },
+  { map: afterMap, id: 'apres3-layer', source: 'apres3', color: '#F0FFFF', label: 'Stations non plantées', data: null, count: 0 }
 ];
 
-function addLayer(info) {
-  info.map.on('load', () => {
+async function addLayer(info) {
+  try {
+    const response = await fetch(info.source + '.geojson');
+    if (!response.ok) throw new Error('Erreur chargement ' + info.source + '.geojson');
+    const geojson = await response.json();
+    info.data = geojson;
+    info.count = geojson.features.length;
+
     info.map.addSource(info.source, {
       type: 'geojson',
-      data: info.source + '.geojson'  // adapter selon ta structure
+      data: geojson
     });
     info.map.addLayer({
       id: info.id,
@@ -177,12 +146,22 @@ function addLayer(info) {
       source: info.source,
       paint: {
         'fill-color': info.color,
-        'fill-opacity': 0.8
+        'fill-opacity': 0.6
       }
     });
-    createLegend();
-  });
+
+    createLegend(); // Actualise la légende après ajout de chaque couche
+  } catch (err) {
+    console.error('Erreur chargement couche ' + info.source, err);
+  }
 }
+
+async function loadAllLayers() {
+  for (const layer of [...layersAvant, ...layersApres]) {
+    await addLayer(layer);
+  }
+}
+loadAllLayers();
 
 function createLegend() {
   const legendDiv = document.getElementById('legend');
@@ -193,14 +172,16 @@ function createLegend() {
   avantTitle.textContent = 'Avant 2020';
   legendDiv.appendChild(avantTitle);
   layersAvant.forEach(l => {
+    if(!l.data) return; // ignore si pas chargé
     const item = document.createElement('div');
     const colorBox = document.createElement('span');
+    colorBox.className = 'color-box';
     colorBox.style.backgroundColor = l.color;
     item.appendChild(colorBox);
     item.appendChild(document.createTextNode(l.label));
     const countSpan = document.createElement('span');
     countSpan.className = 'count';
-    countSpan.textContent = l.count;
+    countSpan.textContent = `(${l.count})`;
     item.appendChild(countSpan);
     legendDiv.appendChild(item);
   });
@@ -210,29 +191,43 @@ function createLegend() {
   apresTitle.textContent = 'Après 2020';
   legendDiv.appendChild(apresTitle);
   layersApres.forEach(l => {
+    if(!l.data) return;
     const item = document.createElement('div');
     const colorBox = document.createElement('span');
+    colorBox.className = 'color-box';
     colorBox.style.backgroundColor = l.color;
     item.appendChild(colorBox);
     item.appendChild(document.createTextNode(l.label));
     const countSpan = document.createElement('span');
     countSpan.className = 'count';
-    countSpan.textContent = l.count;
+    countSpan.textContent = `(${l.count})`;
     item.appendChild(countSpan);
     legendDiv.appendChild(item);
   });
 }
 
-[...layersAvant, ...layersApres].forEach(addLayer);
+// Labels dynamiques
+const labelLeft = document.getElementById('label-left');
+const labelRight = document.getElementById('label-right');
 
-// Ajout des contrôles zoom + boussole sur les deux cartes
-[beforeMap, afterMap].forEach(map => {
-  map.addControl(new mapboxgl.NavigationControl({
-    showCompass: true,
-    showZoom: true
-  }), 'top-right');
+function updateLabels(position) {
+  const sliderX = window.innerWidth * position;
+
+  labelLeft.style.left = (sliderX - labelLeft.offsetWidth - 10) + 'px';
+  labelRight.style.left = (sliderX + 10) + 'px';
+
+  labelLeft.style.opacity = position;
+  labelRight.style.opacity = 1 - position;
+}
+
+compare.on('slide', (e) => {
+  updateLabels(e.detail);
 });
-</script>
 
+// Ajout des contrôles zoom et orientation nord
+beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+afterMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+
+</script>
 </body>
 </html>
