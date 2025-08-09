@@ -102,7 +102,7 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiamVqZTMzMDAwIiwiYSI6ImNtZTJ2c3RnaDAwczEyanF6b
 
 const centerBordeaux = [-0.57409, 44.861022];
 
-// on inverse ici les conteneurs: "after" à gauche, "before" à droite
+// Cartes
 const afterMap = new mapboxgl.Map({
   container: 'after',
   style: 'mapbox://styles/mapbox/dark-v11',
@@ -116,15 +116,13 @@ const beforeMap = new mapboxgl.Map({
   zoom: 11.5
 });
 
-// On inverse l'ordre des maps dans compare pour correspondre au conteneur
+// Compare avec inversion conteneurs (after à gauche)
 const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {});
 
-// Couches avant (sur beforeMap)
+// Couches
 const layersAvant = [
   { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2020', data: null, totalCount: 0, visibleCount: 0 }
 ];
-
-// Couches après (sur afterMap)
 const layersApres = [
   { map: afterMap, id: 'apres1-layer', source: 'apres1', color: '#FF4500', label: 'Stations créées ou en cours', data: null, totalCount: 0, visibleCount: 0 },
   { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Stations remplacées/densifiées', data: null, totalCount: 0, visibleCount: 0 },
@@ -156,7 +154,6 @@ async function addLayer(info) {
       }
     });
 
-    // Surbrillance pour afterMap
     if (info.map === afterMap) {
       info.map.addLayer({
         id: info.id + '-highlight',
@@ -166,7 +163,7 @@ async function addLayer(info) {
           'fill-color': '#ffff00',
           'fill-opacity': 0.3
         },
-        filter: ['==', 'fid', ''] // filtre vide par défaut
+        filter: ['==', 'fid', '']
       });
     }
 
@@ -195,9 +192,13 @@ async function addLayer(info) {
       if (info.map.getLayoutProperty(info.id + '-label', 'visibility') !== visibility) {
         info.map.setLayoutProperty(info.id + '-label', 'visibility', visibility);
       }
+      updateStats();  // mise à jour stats au zoom
     });
 
-    // Interaction popup clic
+    info.map.on('move', () => {
+      updateStats();  // mise à jour stats au déplacement
+    });
+
     info.map.on('click', info.id, (e) => {
       if (!e.features.length) return;
       const feature = e.features[0];
@@ -212,7 +213,6 @@ async function addLayer(info) {
         .addTo(info.map);
     });
 
-    // Curseur pointer
     info.map.on('mouseenter', info.id, () => {
       info.map.getCanvas().style.cursor = 'pointer';
     });
@@ -233,6 +233,7 @@ async function loadAllLayers() {
 
 loadAllLayers().then(() => {
   updateStats();
+  createLegend();
 });
 
 const labelLeft = document.getElementById('label-left');
@@ -249,10 +250,59 @@ compare.on('slide', e => {
 });
 updateLabels(0);
 
-// Compter stations visibles dans la vue
+// Fonction qui retourne les bounds visibles dans la portion visible de la carte (en tenant compte du swipe)
+function getVisibleBounds(map, side) {
+  // side: "left" = afterMap (à gauche), "right" = beforeMap (à droite)
+  // Récupère le conteneur #container, sa largeur
+  const container = document.getElementById('container');
+  const rect = container.getBoundingClientRect();
+  const mapCanvas = map.getCanvas();
+
+  // largeur visible totale container
+  const containerWidth = rect.width;
+
+  // position du slider (de 0 à 1)
+  const sliderPos = compare._slider ? compare._slider._pos : 0.5;
+
+  // Calcul des pixels visibles pour cette carte
+  let leftPx, rightPx;
+
+  if (map === afterMap) {
+    // afterMap visible de 0 à sliderPos * largeur
+    leftPx = 0;
+    rightPx = sliderPos * containerWidth;
+  } else if (map === beforeMap) {
+    // beforeMap visible de sliderPos * largeur à largeur totale
+    leftPx = sliderPos * containerWidth;
+    rightPx = containerWidth;
+  } else {
+    // pas prévu ici
+    return map.getBounds();
+  }
+
+  // Calcul des coordonnées lng/lat des coins visibles
+  // map.unproject(x,y) : x,y en pixels relatifs au canvas
+
+  // Le canvas peut ne pas couvrir toute la largeur visible, il faut prendre en compte offsetLeft
+  const canvasRect = mapCanvas.getBoundingClientRect();
+  const offsetX = canvasRect.left - rect.left; // décalage du canvas dans container
+
+  // Calcul coins visibles en pixels relatifs au canvas
+  const visibleLeftPx = leftPx - offsetX;
+  const visibleRightPx = rightPx - offsetX;
+
+  const topLeft = map.unproject([visibleLeftPx, 0]);
+  const bottomRight = map.unproject([visibleRightPx, mapCanvas.height]);
+
+  return new mapboxgl.LngLatBounds(topLeft, bottomRight);
+}
+
+// Compter stations visibles dans la zone visible adaptée au swipe
 function countVisibleStations(layerInfo) {
   if (!layerInfo.data) return 0;
-  const bounds = layerInfo.map.getBounds();
+
+  // Récupère bounds visibles correspondant à la partie visible du slider
+  const bounds = getVisibleBounds(layerInfo.map);
 
   return layerInfo.data.features.filter(f => {
     let coord = null;
@@ -267,7 +317,7 @@ function countVisibleStations(layerInfo) {
   }).length;
 }
 
-// Mise à jour légende (total seulement)
+// Création de la légende avec total uniquement
 function createLegend() {
   const legendDiv = document.getElementById('legend');
   legendDiv.innerHTML = '';
@@ -276,7 +326,7 @@ function createLegend() {
   avantTitle.textContent = 'Avant 2020';
   legendDiv.appendChild(avantTitle);
   layersAvant.forEach(l => {
-    if(!l.data) return;
+    if (!l.data) return;
     const item = document.createElement('div');
     const colorBox = document.createElement('span');
     colorBox.className = 'color-box';
@@ -294,7 +344,7 @@ function createLegend() {
   apresTitle.textContent = 'Après 2020';
   legendDiv.appendChild(apresTitle);
   layersApres.forEach(l => {
-    if(!l.data) return;
+    if (!l.data) return;
     const item = document.createElement('div');
     const colorBox = document.createElement('span');
     colorBox.className = 'color-box';
@@ -333,7 +383,7 @@ const chart = new Chart(ctx, {
   }
 });
 
-// Mise à jour stats : uniquement couches après 2020
+// Mise à jour stats avec prise en compte swipe
 function updateStats() {
   layersApres.forEach(l => {
     l.visibleCount = countVisibleStations(l);
@@ -349,10 +399,9 @@ function updateStats() {
   createLegend();
 }
 
-afterMap.on('move', updateStats);
-beforeMap.on('move', updateStats);
-
 </script>
 
 </body>
 </html>
+
+
