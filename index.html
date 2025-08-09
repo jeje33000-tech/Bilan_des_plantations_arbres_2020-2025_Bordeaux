@@ -2,31 +2,29 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<title>Swipe Avant/Après - Étiquettes CODE_STATION</title>
+<title>Swipe Avant/Après - Plusieurs couches dynamiques</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
 <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" rel="stylesheet" />
 <style>
   body { margin:0; padding:0; }
   #before, #after { position:absolute; top:0; bottom:0; width:100%; }
-  
+
+  /* Légende à gauche, petite et compacte */
   .legend {
     position: absolute;
     top: 10px;
     left: 10px;
     background: rgba(255,255,255,0.9);
-    padding: 6px 12px;
+    padding: 4px 8px;
     border-radius: 5px;
     font-family: Arial, sans-serif;
     font-size: 11px;
     z-index: 1000;
-    max-width: 200px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    max-width: 280px;
   }
   .legend h4 {
-    margin: 0 0 4px 0;
+    margin: 4px 0 4px 0;
     font-size: 12px;
     border-bottom: none;
     padding-bottom: 0;
@@ -34,36 +32,43 @@
   .legend div {
     display: flex;
     align-items: center;
-    margin: 0;
-    gap: 4px;
+    margin: 2px 0;
   }
   .legend span.color-box {
     width: 16px;
     height: 12px;
+    margin-right: 5px;
     border: 1px solid #555;
     flex-shrink: 0;
   }
   .legend span.count {
+    margin-left: 4px;
     font-weight: bold;
     color: #333;
-    margin-left: auto;
   }
-  
+
+  /* Labels dynamiques en bas */
   #label-left, #label-right {
     position: absolute;
-    bottom: 10px;
+    bottom: 25px;
     padding: 4px 10px;
-    background: rgba(255, 255, 255, 0.85);
+    font-size: 12px;
     font-weight: bold;
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 3px;
     pointer-events: none;
     font-family: Arial, sans-serif;
-    font-size: 12px;
-    z-index: 1000;
     white-space: nowrap;
+    z-index: 1000;
     transition: opacity 0.3s ease;
   }
 
+  /* Flèche dans label droite (après 2020) */
+  #label-right::after {
+    content: " ➔";
+  }
+
+  /* Boutons zoom et orientation nord */
   .mapboxgl-ctrl-top-right {
     top: 10px !important;
     right: 10px !important;
@@ -76,7 +81,7 @@
 <div id="after"></div>
 
 <div id="label-left">Avant 2020</div>
-<div id="label-right">Après 2020 ➔</div>
+<div id="label-right">Après 2020</div>
 
 <div id="legend" class="legend"></div>
 
@@ -103,6 +108,7 @@ const afterMap = new mapboxgl.Map({
 
 const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
 
+// Position slider initial
 afterMap.on('load', () => {
   beforeMap.on('load', () => {
     compare.setSliderPosition(0);
@@ -110,6 +116,7 @@ afterMap.on('load', () => {
   });
 });
 
+// Définition des couches
 const layersAvant = [
   { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2020', data: null, count: 0 }
 ];
@@ -142,27 +149,7 @@ async function addLayer(info) {
       }
     });
 
-    // Ajout de la couche label CODE_STATION (symbol) pour chaque source
-    info.map.addLayer({
-      id: info.id + '-labels',
-      type: 'symbol',
-      source: info.source,
-      layout: {
-        'text-field': ['get', 'CODE_STATION'],
-        'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
-        'text-size': 10,
-        'text-anchor': 'center',
-        'text-offset': [0, 0]
-      },
-      paint: {
-        'text-color': '#000',
-        'text-halo-color': '#fff',
-        'text-halo-width': 1.5
-      },
-      minzoom: 20  // visible à partir du zoom 20 uniquement
-    });
-
-    createLegend();
+    createLegend(); // Actualise la légende après ajout de chaque couche
   } catch (err) {
     console.error('Erreur chargement couche ' + info.source, err);
   }
@@ -179,11 +166,12 @@ function createLegend() {
   const legendDiv = document.getElementById('legend');
   legendDiv.innerHTML = '';
 
+  // Bloc Avant
   const avantTitle = document.createElement('h4');
   avantTitle.textContent = 'Avant 2020';
   legendDiv.appendChild(avantTitle);
   layersAvant.forEach(l => {
-    if(!l.data) return;
+    if(!l.data) return; // ignore si pas chargé
     const item = document.createElement('div');
     const colorBox = document.createElement('span');
     colorBox.className = 'color-box';
@@ -197,6 +185,7 @@ function createLegend() {
     legendDiv.appendChild(item);
   });
 
+  // Bloc Après
   const apresTitle = document.createElement('h4');
   apresTitle.textContent = 'Après 2020';
   legendDiv.appendChild(apresTitle);
@@ -216,33 +205,38 @@ function createLegend() {
   });
 }
 
+// Labels dynamiques
 const labelLeft = document.getElementById('label-left');
 const labelRight = document.getElementById('label-right');
 
 function updateLabels(position) {
   const sliderX = window.innerWidth * position;
-  const gap = 10;
 
-  let leftLabelX = sliderX - labelRight.offsetWidth - gap;
-  let rightLabelX = sliderX + gap;
+  const minSpace = 15;
 
-  if (rightLabelX < leftLabelX + labelRight.offsetWidth + gap) {
-    rightLabelX = leftLabelX + labelRight.offsetWidth + gap;
+  let labelRightX = sliderX + 10;
+  let labelLeftX = sliderX - labelLeft.offsetWidth - 10;
+
+  if (labelLeftX + labelLeft.offsetWidth + minSpace > labelRightX) {
+    labelLeftX = labelRightX - labelLeft.offsetWidth - minSpace;
   }
 
-  labelRight.style.left = leftLabelX + 'px';
-  labelLeft.style.left = rightLabelX + 'px';
+  labelLeft.style.left = labelLeftX + 'px';
+  labelRight.style.left = labelRightX + 'px';
 
-  labelRight.style.opacity = position;
+  // Inverser opacité : gauche visible à gauche, droite visible à droite
   labelLeft.style.opacity = 1 - position;
+  labelRight.style.opacity = position;
 }
 
 compare.on('slide', (e) => {
   updateLabels(e.detail);
 });
 
+// Ajout des contrôles zoom et orientation nord
 beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
 afterMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+
 </script>
 </body>
 </html>
