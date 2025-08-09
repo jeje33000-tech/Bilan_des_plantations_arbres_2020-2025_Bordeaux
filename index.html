@@ -9,7 +9,6 @@
 <style>
   body { margin:0; padding:0; }
   #before, #after { position:absolute; top:0; bottom:0; width:100%; }
-  /* Légende */
   .legend {
     position: absolute;
     top: 10px;
@@ -45,7 +44,6 @@
     font-weight: bold;
     color: #333;
   }
-  /* Labels dynamiques en bas */
   #label-left, #label-right {
     position: absolute;
     bottom: 30px;
@@ -67,7 +65,6 @@
     top: 10px !important;
     right: 10px !important;
   }
-  /* Stats */
   #stats {
     position: absolute;
     bottom: 10px;
@@ -115,25 +112,33 @@ const afterMap = new mapboxgl.Map({
   zoom: 11.5
 });
 
-const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
-
-// Synchronisation des déplacements (zoom, pan) améliorée
+// Nouvelle sync avec flag anti-boucle
 function syncMaps(map1, map2) {
-  let moving = false;
-  function onMove(e) {
-    if (moving) return;
-    moving = true;
-    const center = e.target.getCenter();
-    const zoom = e.target.getZoom();
-    const bearing = e.target.getBearing();
-    const pitch = e.target.getPitch();
+  let isSyncing = false;
+  map1.on('move', () => {
+    if (isSyncing) return;
+    isSyncing = true;
+    const center = map1.getCenter();
+    const zoom = map1.getZoom();
+    const bearing = map1.getBearing();
+    const pitch = map1.getPitch();
     map2.jumpTo({ center, zoom, bearing, pitch });
-    moving = false;
-  }
-  map1.on('move', onMove);
-  map2.on('move', onMove);
+    isSyncing = false;
+  });
+  map2.on('move', () => {
+    if (isSyncing) return;
+    isSyncing = true;
+    const center = map2.getCenter();
+    const zoom = map2.getZoom();
+    const bearing = map2.getBearing();
+    const pitch = map2.getPitch();
+    map1.jumpTo({ center, zoom, bearing, pitch });
+    isSyncing = false;
+  });
 }
 syncMaps(beforeMap, afterMap);
+
+const compare = new mapboxgl.Compare(afterMap, beforeMap, '#before', {});
 
 afterMap.on('load', () => {
   beforeMap.on('load', () => {
@@ -152,9 +157,9 @@ const layersApres = [
 ];
 
 let highlightId = null;
+let highlightLayerId = null;
 let popup = null;
 
-// Ajoute une couche, avec interaction, surbrillance, et labels CODE_STATION
 async function addLayer(info) {
   try {
     const response = await fetch(info.source + '.geojson');
@@ -168,7 +173,7 @@ async function addLayer(info) {
       data: geojson
     });
 
-    // Layer polygone avec opacité 0.6
+    // Couche polygone avec opacité 0.6
     info.map.addLayer({
       id: info.id,
       type: 'fill',
@@ -179,7 +184,7 @@ async function addLayer(info) {
       }
     });
 
-    // Surbrillance (uniquement sur afterMap) : polygone transparent 0.3
+    // Surbrillance en polygone transparent opacité 0.3
     if (info.map === afterMap) {
       info.map.addLayer({
         id: info.id + '-highlight',
@@ -187,13 +192,14 @@ async function addLayer(info) {
         source: info.source,
         paint: {
           'fill-color': '#ffff00',
-          'fill-opacity': 0.3
+          'fill-opacity': 0.3,
+          'fill-outline-color': '#ffff00'
         },
-        filter: ['==', 'fid', ''] // Pas de surbrillance au départ
+        filter: ['==', 'fid', '']
       });
     }
 
-    // Ajout des labels CODE_STATION (symbol layer), visibles à partir du zoom 15
+    // Labels CODE_STATION, visibles à partir du zoom 15
     info.map.addLayer({
       id: info.id + '-label',
       type: 'symbol',
@@ -213,40 +219,33 @@ async function addLayer(info) {
       }
     });
 
-    // Affiche ou masque les labels selon zoom
+    // Affichage labels au zoom >= 15
     function toggleLabels() {
       const zoom = info.map.getZoom();
-      const visibility = zoom >= 15 ? 'visible' : 'none';
-      if (info.map.getLayer(info.id + '-label')) {
-        info.map.setLayoutProperty(info.id + '-label', 'visibility', visibility);
-      }
+      info.map.setLayoutProperty(info.id + '-label', 'visibility', zoom >= 15 ? 'visible' : 'none');
     }
-    toggleLabels();
     info.map.on('zoom', toggleLabels);
+    toggleLabels();
 
     createLegend();
 
-    // Interaction clic
     info.map.on('click', info.id, (e) => {
       if (!e.features.length) return;
       const feature = e.features[0];
       if (info.map === afterMap) {
         highlightId = feature.properties.fid;
-        info.map.setFilter(info.id + '-highlight', ['==', ['get', 'fid'], highlightId]);
+        highlightLayerId = info.id + '-highlight';
+        info.map.setFilter(highlightLayerId, ['==', ['get', 'fid'], highlightId]);
       }
-
       const coordinates = e.lngLat;
       const codeStation = feature.properties.CODE_STATION || 'N/A';
-
       if (popup) popup.remove();
-
       popup = new mapboxgl.Popup()
         .setLngLat(coordinates)
         .setHTML(`<strong>Code station:</strong> ${codeStation}`)
         .addTo(info.map);
     });
 
-    // Retirer surbrillance et popup quand on clique hors polygone (uniquement afterMap)
     if (info.map === afterMap) {
       info.map.on('click', (e) => {
         const features = info.map.queryRenderedFeatures(e.point, {
@@ -265,7 +264,6 @@ async function addLayer(info) {
       });
     }
 
-    // Curseur pointer sur polygones
     info.map.on('mouseenter', info.id, () => {
       info.map.getCanvas().style.cursor = 'pointer';
     });
@@ -291,7 +289,6 @@ function createLegend() {
   const legendDiv = document.getElementById('legend');
   legendDiv.innerHTML = '';
 
-  // Avant
   const avantTitle = document.createElement('h4');
   avantTitle.textContent = 'Avant 2020';
   legendDiv.appendChild(avantTitle);
@@ -305,12 +302,11 @@ function createLegend() {
     item.appendChild(document.createTextNode(l.label));
     const countSpan = document.createElement('span');
     countSpan.className = 'count';
-    countSpan.textContent = `(${l.count})`;
+    countSpan.textContent = ` (${l.count})`;
     item.appendChild(countSpan);
     legendDiv.appendChild(item);
   });
 
-  // Après
   const apresTitle = document.createElement('h4');
   apresTitle.textContent = 'Après 2020';
   legendDiv.appendChild(apresTitle);
@@ -324,56 +320,37 @@ function createLegend() {
     item.appendChild(document.createTextNode(l.label));
     const countSpan = document.createElement('span');
     countSpan.className = 'count';
-    countSpan.textContent = `(${l.count})`;
+    countSpan.textContent = ` (${l.count})`;
     item.appendChild(countSpan);
     legendDiv.appendChild(item);
   });
 }
 
-const labelLeft = document.getElementById('label-left');
-const labelRight = document.getElementById('label-right');
-
 function updateLabels(position) {
-  const sliderX = window.innerWidth * position;
-
-  const minSpace = 15;
-
-  let labelRightX = sliderX + 10;
-  let labelLeftX = sliderX - labelLeft.offsetWidth - 10;
-
-  if (labelLeftX + labelLeft.offsetWidth + minSpace > labelRightX) {
-    labelLeftX = labelRightX - labelLeft.offsetWidth - minSpace;
-  }
-
-  labelLeft.style.left = labelLeftX + 'px';
-  labelRight.style.left = labelRightX + 'px';
-
-  labelLeft.style.opacity = 1 - position;
-  labelRight.style.opacity = position;
+  document.getElementById('label-left').style.opacity = 1 - position;
+  document.getElementById('label-right').style.opacity = position;
 }
 
-compare.on('slide', (e) => {
-  updateLabels(e.detail);
+compare.on('slider', e => {
+  updateLabels(e);
 });
 
-beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
-afterMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
-
-// Statistiques dynamiques avec Chart.js
 let chart = null;
 
 function updateStats() {
+  // Assure que les données sont bien chargées
+  if (!layersAvant[0].data || !layersApres[0].data) return;
+
   const bounds = afterMap.getBounds();
 
   function countVisibleStations(layer) {
     if (!layer.data) return 0;
     return layer.data.features.filter(f => {
-      const geom = f.geometry;
       let coord;
-      if (geom.type === 'Point') {
-        coord = geom.coordinates;
-      } else if (geom.type === 'Polygon') {
-        coord = geom.coordinates[0][0];
+      if (f.geometry.type === 'Point') {
+        coord = f.geometry.coordinates;
+      } else if (f.geometry.type === 'Polygon') {
+        coord = f.geometry.coordinates[0][0];
       } else {
         return false;
       }
@@ -399,7 +376,10 @@ function updateStats() {
     document.getElementById('stats').innerHTML = '<p style="text-align:center; padding-top: 70px;">Aucune station visible</p>';
     return;
   } else {
-    document.getElementById('stats').innerHTML = '<canvas id="chart"></canvas>';
+    // Remplacer contenu par canvas si supprimé précédemment
+    if (!document.getElementById('chart')) {
+      document.getElementById('stats').innerHTML = '<canvas id="chart"></canvas>';
+    }
   }
 
   const ctx = document.getElementById('chart').getContext('2d');
@@ -413,7 +393,7 @@ function updateStats() {
     chart = new Chart(ctx, {
       type: 'pie',
       data: {
-        labels: labels,
+        labels,
         datasets: [{
           data: counts,
           backgroundColor: colors,
@@ -424,12 +404,10 @@ function updateStats() {
       options: {
         responsive: true,
         plugins: {
-          legend: {
-            position: 'bottom',
-          },
+          legend: { position: 'bottom' },
           tooltip: {
             callbacks: {
-              label: context => `${context.label}: ${context.parsed}`,
+              label: ctx => `${ctx.label}: ${ctx.parsed}`
             }
           }
         }
@@ -438,9 +416,11 @@ function updateStats() {
   }
 }
 
-afterMap.on('moveend', updateStats);
+// Met à jour stats à chaque fin de mouvement
 beforeMap.on('moveend', updateStats);
+afterMap.on('moveend', updateStats);
 
 </script>
+
 </body>
 </html>
