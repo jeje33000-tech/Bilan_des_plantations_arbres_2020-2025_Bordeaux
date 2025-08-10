@@ -126,7 +126,10 @@
   <div id="after"></div>
   <div id="before"></div>
 </div>
-
+<div id="stats">
+  <h3 style="margin:0 0 8px 0; font-size: 16px; font-weight: bold;">Répartition des stations visibles</h3>
+  <canvas id="chart"></canvas>
+</div>
 <div class="legend" id="legend"></div>
 <button id="btnToggleStats">Afficher stat mandat visibles sur la carte</button>
 
@@ -427,13 +430,18 @@ function toggleSlider() {
     btnToggleStats.textContent = 'Afficher stat mandat visibles sur la carte';
   }
 }
+
+
+
+  btnToggleStats.addEventListener('click', toggleSlider);
 // Ajout des contrôles zoom et boussole en haut à droite
 afterMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
 beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
 
-  btnToggleStats.addEventListener('click', toggleSlider);
+  
 </script>
 
 </body>
 </html>
+
 
