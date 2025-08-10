@@ -8,20 +8,9 @@
 <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" rel="stylesheet" />
 <style>
   body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
-  #btnToggleStats {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 1100;
-    padding: 8px 12px;
-    background: #0074D9;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
   #container { position:relative; width:100%; height:100vh; }
   #before, #after { position:absolute; top:0; bottom:0; width:100%; }
+  /* Légende */
   .legend {
     position: absolute;
     top: 50px;
@@ -54,6 +43,36 @@
     font-weight: bold;
     color: #333;
   }
+  /* Bouton sous la légende */
+  #btnToggleStats {
+    position: absolute;
+    top: calc(50px + 140px); /* Légende + marge */
+    left: 10px;
+    z-index: 1100;
+    padding: 8px 12px;
+    background: #0074D9;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    max-width: 280px;
+  }
+  /* Graphique en bas à gauche */
+  #stats {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    width: 280px;
+    height: 180px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 5px;
+    padding: 10px;
+    font-family: Arial, sans-serif;
+    z-index: 1000;
+    display: none; /* caché par défaut */
+  }
+  /* Labels en bas */
   #label-left, #label-right {
     position: absolute;
     bottom: 30px;
@@ -67,44 +86,35 @@
     z-index: 1000;
     transition: opacity 0.3s ease;
   }
-  #label-right::after {
-    content: " ➔";
-  }
   #label-left {
     left: 10px;
   }
   #label-right {
     right: 10px;
   }
-  #stats {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    width: 280px;
-    height: 180px;
-    background: rgba(255,255,255,0.9);
-    border-radius: 5px;
-    padding: 10px;
-    font-family: Arial, sans-serif;
-    z-index: 1000;
-    display: none; /* caché par défaut */
+  #label-left::after {
+    content: " ➔";
+  }
+  /* Surbrillance */
+  .mapboxgl-compare .mapboxgl-map canvas {
+    transition: opacity 0.3s ease;
   }
 </style>
 </head>
 <body>
 
-<button id="btnToggleStats">Afficher Stat</button>
-
 <div id="container">
-  <div id="after"></div> <!-- inversé: after à gauche -->
-  <div id="before"></div> <!-- before à droite -->
+  <div id="after"></div>
+  <div id="before"></div>
 </div>
+
+<div class="legend" id="legend"></div>
+<button id="btnToggleStats">Afficher stat mandat visibles sur la carte</button>
+
+<div id="stats"><canvas id="chart"></canvas></div>
 
 <div id="label-left">Après 2020</div>
 <div id="label-right">Avant 2020</div>
-
-<div id="legend" class="legend"></div>
-<div id="stats"><canvas id="chart"></canvas></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
@@ -115,7 +125,6 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiamVqZTMzMDAwIiwiYSI6ImNtZTJ2c3RnaDAwczEyanF6b
 
 const centerBordeaux = [-0.57409, 44.861022];
 
-// on inverse ici les conteneurs: "after" à gauche, "before" à droite
 const afterMap = new mapboxgl.Map({
   container: 'after',
   style: 'mapbox://styles/mapbox/dark-v11',
@@ -129,15 +138,14 @@ const beforeMap = new mapboxgl.Map({
   zoom: 11.5
 });
 
-// On inverse l'ordre des maps dans compare pour correspondre au conteneur
+// Compare inverse les maps (after à gauche, before à droite)
 const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {});
 
-// Couches avant (sur beforeMap)
+// Définition couches
 const layersAvant = [
   { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2020', data: null, totalCount: 0, visibleCount: 0 }
 ];
 
-// Couches après (sur afterMap)
 const layersApres = [
   { map: afterMap, id: 'apres1-layer', source: 'apres1', color: '#FF4500', label: 'Stations créées ou en cours', data: null, totalCount: 0, visibleCount: 0 },
   { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Stations remplacées/densifiées', data: null, totalCount: 0, visibleCount: 0 },
@@ -159,6 +167,7 @@ async function addLayer(info) {
       data: geojson
     });
 
+    // couche principale
     info.map.addLayer({
       id: info.id,
       type: 'fill',
@@ -169,7 +178,7 @@ async function addLayer(info) {
       }
     });
 
-    // Surbrillance pour afterMap
+    // Surbrillance — uniquement pour afterMap (après 2020)
     if (info.map === afterMap) {
       info.map.addLayer({
         id: info.id + '-highlight',
@@ -179,10 +188,11 @@ async function addLayer(info) {
           'fill-color': '#ffff00',
           'fill-opacity': 0.3
         },
-        filter: ['==', 'fid', ''] // filtre vide par défaut
+        filter: ['==', 'fid', ''] // filtre vide = rien sélectionné au départ
       });
     }
 
+    // Label station (visible à zoom >= 15)
     info.map.addLayer({
       id: info.id + '-label',
       type: 'symbol',
@@ -210,7 +220,19 @@ async function addLayer(info) {
       }
     });
 
-    // Interaction popup clic
+    // Interaction surbrillance au survol (only aprèsMap)
+    if (info.map === afterMap) {
+      info.map.on('mousemove', info.id, (e) => {
+        if (!e.features.length) return;
+        const fid = e.features[0].properties.fid || '';
+        info.map.setFilter(info.id + '-highlight', ['==', 'fid', fid]);
+      });
+      info.map.on('mouseleave', info.id, () => {
+        info.map.setFilter(info.id + '-highlight', ['==', 'fid', '']);
+      });
+    }
+
+    // Popup au clic
     info.map.on('click', info.id, (e) => {
       if (!e.features.length) return;
       const feature = e.features[0];
@@ -262,7 +284,7 @@ compare.on('slide', e => {
 });
 updateLabels(0);
 
-// Compter stations visibles dans la vue
+// Fonction qui compte les stations visibles dans la vue courante
 function countVisibleStations(layerInfo) {
   if (!layerInfo.data) return 0;
   const bounds = layerInfo.map.getBounds();
@@ -280,7 +302,7 @@ function countVisibleStations(layerInfo) {
   }).length;
 }
 
-// Mise à jour légende (total seulement)
+// Mise à jour légende avec totaux
 function createLegend() {
   const legendDiv = document.getElementById('legend');
   legendDiv.innerHTML = '';
@@ -362,26 +384,28 @@ function updateStats() {
   createLegend();
 }
 
+// Met à jour stats à chaque déplacement map
 afterMap.on('move', updateStats);
 beforeMap.on('move', updateStats);
 
-// --- AJOUT du bouton toggle pour slider et stats ---
+// --- Bouton toggle ---
 const container = document.getElementById('container');
 const statsDiv = document.getElementById('stats');
 const btnToggleStats = document.getElementById('btnToggleStats');
 
 const sliderPositions = [container.offsetWidth, container.offsetWidth / 2]; // droite et milieu
-let currentPosIndex = 1; // commencer au milieu
+let currentPosIndex = 1; // commence au milieu
 
 function toggleSlider() {
-  currentPosIndex = 1 - currentPosIndex; // alterne entre 0 et 1
+  currentPosIndex = 1 - currentPosIndex; // bascule entre 0 et 1
   compare.setSlider(sliderPositions[currentPosIndex]);
+
   if (currentPosIndex === 0) {
     statsDiv.style.display = 'block';
-    btnToggleStats.textContent = 'Masquer Stat';
+    btnToggleStats.textContent = 'Masquer stat';
   } else {
     statsDiv.style.display = 'none';
-    btnToggleStats.textContent = 'Afficher Stat';
+    btnToggleStats.textContent = 'Afficher stat mandat visibles sur la carte';
   }
 }
 
