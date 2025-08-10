@@ -208,7 +208,7 @@ async function addLayer(info) {
 
       popup = new mapboxgl.Popup()
         .setLngLat(coordinates)
-        .setHTML(<strong>Code station:</strong> ${codeStation})
+        .setHTML(`<strong>Code station:</strong> ${codeStation}`)
         .addTo(info.map);
     });
 
@@ -282,10 +282,10 @@ function createLegend() {
     colorBox.className = 'color-box';
     colorBox.style.backgroundColor = l.color;
     item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(${l.label} (total)));
+    item.appendChild(document.createTextNode(`${l.label} (total)`));
     const countSpan = document.createElement('span');
     countSpan.className = 'count';
-    countSpan.textContent = ${l.totalCount};
+    countSpan.textContent = `${l.totalCount}`;
     item.appendChild(countSpan);
     legendDiv.appendChild(item);
   });
@@ -300,10 +300,10 @@ function createLegend() {
     colorBox.className = 'color-box';
     colorBox.style.backgroundColor = l.color;
     item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(${l.label} (total)));
+    item.appendChild(document.createTextNode(`${l.label} (total)`));
     const countSpan = document.createElement('span');
     countSpan.className = 'count';
-    countSpan.textContent = ${l.totalCount};
+    countSpan.textContent = `${l.totalCount}`;
     item.appendChild(countSpan);
     legendDiv.appendChild(item);
   });
