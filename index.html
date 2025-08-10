@@ -7,13 +7,32 @@
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
 <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" rel="stylesheet" />
 <style>
-  body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
-  #container { position:relative; width:100%; height:100vh; }
-  #before, #after { position:absolute; top:0; bottom:0; width:100%; }
-  /* Légende */
+  body,html {
+    margin:0; padding:0; height:100%; overflow: hidden; /* Supprime scrollbars */
+    font-family: Arial, sans-serif;
+  }
+  #header {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    background-color: #2e7d32; /* vert */
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    padding: 12px 15px;
+    z-index: 1100;
+    text-align: center;
+  }
+  #container {
+    position: absolute;
+    top: 48px; /* hauteur header + petit espace */
+    bottom: 0; left: 0; right: 0;
+  }
+  #before, #after {
+    position: absolute; top:0; bottom:0; width: 100%;
+  }
   .legend {
     position: absolute;
-    top: 50px;
+    top: 10px;
     left: 10px;
     background: rgba(255,255,255,0.9);
     padding: 6px 12px;
@@ -21,10 +40,6 @@
     font-size: 12px;
     z-index: 1000;
     max-width: 280px;
-  }
-  .legend h4 {
-    margin: 6px 0 4px;
-    font-size: 13px;
   }
   .legend div {
     display: flex;
@@ -43,36 +58,6 @@
     font-weight: bold;
     color: #333;
   }
-  /* Bouton sous la légende */
-  #btnToggleStats {
-    position: absolute;
-    top: calc(50px + 140px); /* Légende + marge */
-    left: 10px;
-    z-index: 1100;
-    padding: 8px 12px;
-    background: #0074D9;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 13px;
-    max-width: 280px;
-  }
-  /* Graphique en bas à gauche */
-  #stats {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    width: 280px;
-    height: 180px;
-    background: rgba(255,255,255,0.9);
-    border-radius: 5px;
-    padding: 10px;
-    font-family: Arial, sans-serif;
-    z-index: 1000;
-    display: none; /* caché par défaut */
-  }
-  /* Labels en bas */
   #label-left, #label-right {
     position: absolute;
     bottom: 30px;
@@ -85,6 +70,10 @@
     white-space: nowrap;
     z-index: 1000;
     transition: opacity 0.3s ease;
+    font-family: Arial, sans-serif;
+  }
+  #label-right::after {
+    content: " ➔";
   }
   #label-left {
     left: 10px;
@@ -92,29 +81,64 @@
   #label-right {
     right: 10px;
   }
-  #label-left::after {
-    content: " ➔";
+  #stats {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    width: 280px;
+    height: 180px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 5px;
+    padding: 10px;
+    font-family: Arial, sans-serif;
+    z-index: 1000;
   }
-  /* Surbrillance */
-  .mapboxgl-compare .mapboxgl-map canvas {
-    transition: opacity 0.3s ease;
+  #stats h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+  }
+  #btnToggleStats {
+    display: block;
+    margin: 8px auto 0 auto;
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid #555;
+    background-color: white;
+    cursor: pointer;
+    max-width: 280px;
+    z-index: 1000;
+    position: absolute;
+    top: calc(10px + 110px); /* sous la légende */
+    left: 10px;
+  }
+  /* Supprimer ascenseurs */
+  #container > div {
+    overflow: hidden !important;
   }
 </style>
 </head>
 <body>
 
+<div id="header">Bilan des stations plantées pendant le mandat</div>
+
 <div id="container">
-  <div id="after"></div>
-  <div id="before"></div>
+  <div id="after"></div> <!-- inversé: after à gauche -->
+  <div id="before"></div> <!-- before à droite -->
 </div>
 
-<div class="legend" id="legend"></div>
+<div id="label-left">Après 2020 ➔</div>
+<div id="label-right">Avant 2020</div>
+
+<div id="legend" class="legend"></div>
 <button id="btnToggleStats">Afficher stat mandat visibles sur la carte</button>
 
-<div id="stats"><canvas id="chart"></canvas></div>
-
-<div id="label-left">Après 2020</div>
-<div id="label-right">Avant 2020</div>
+<div id="stats" style="display:none;">
+  <h4>Répartition des stations visibles</h4>
+  <canvas id="chart"></canvas>
+</div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
@@ -125,6 +149,7 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiamVqZTMzMDAwIiwiYSI6ImNtZTJ2c3RnaDAwczEyanF6b
 
 const centerBordeaux = [-0.57409, 44.861022];
 
+// Inversion conteneurs: after à gauche, before à droite
 const afterMap = new mapboxgl.Map({
   container: 'after',
   style: 'mapbox://styles/mapbox/dark-v11',
@@ -138,14 +163,12 @@ const beforeMap = new mapboxgl.Map({
   zoom: 11.5
 });
 
-// Compare inverse les maps (after à gauche, before à droite)
 const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {});
 
-// Définition couches
+// Couches
 const layersAvant = [
   { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2020', data: null, totalCount: 0, visibleCount: 0 }
 ];
-
 const layersApres = [
   { map: afterMap, id: 'apres1-layer', source: 'apres1', color: '#FF4500', label: 'Stations créées ou en cours', data: null, totalCount: 0, visibleCount: 0 },
   { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Stations remplacées/densifiées', data: null, totalCount: 0, visibleCount: 0 },
@@ -167,7 +190,6 @@ async function addLayer(info) {
       data: geojson
     });
 
-    // couche principale
     info.map.addLayer({
       id: info.id,
       type: 'fill',
@@ -178,7 +200,7 @@ async function addLayer(info) {
       }
     });
 
-    // Surbrillance — uniquement pour afterMap (après 2020)
+    // Surbrillance pour afterMap
     if (info.map === afterMap) {
       info.map.addLayer({
         id: info.id + '-highlight',
@@ -188,11 +210,10 @@ async function addLayer(info) {
           'fill-color': '#ffff00',
           'fill-opacity': 0.3
         },
-        filter: ['==', 'fid', ''] // filtre vide = rien sélectionné au départ
+        filter: ['==', 'fid', ''] // filtre vide par défaut
       });
     }
 
-    // Label station (visible à zoom >= 15)
     info.map.addLayer({
       id: info.id + '-label',
       type: 'symbol',
@@ -220,19 +241,7 @@ async function addLayer(info) {
       }
     });
 
-    // Interaction surbrillance au survol (only aprèsMap)
-    if (info.map === afterMap) {
-      info.map.on('mousemove', info.id, (e) => {
-        if (!e.features.length) return;
-        const fid = e.features[0].properties.fid || '';
-        info.map.setFilter(info.id + '-highlight', ['==', 'fid', fid]);
-      });
-      info.map.on('mouseleave', info.id, () => {
-        info.map.setFilter(info.id + '-highlight', ['==', 'fid', '']);
-      });
-    }
-
-    // Popup au clic
+    // Interaction popup clic
     info.map.on('click', info.id, (e) => {
       if (!e.features.length) return;
       const feature = e.features[0];
@@ -268,8 +277,10 @@ async function loadAllLayers() {
 
 loadAllLayers().then(() => {
   updateStats();
+  createLegend();
 });
 
+// Labels opacité
 const labelLeft = document.getElementById('label-left');
 const labelRight = document.getElementById('label-right');
 
@@ -284,7 +295,7 @@ compare.on('slide', e => {
 });
 updateLabels(0);
 
-// Fonction qui compte les stations visibles dans la vue courante
+// Compter stations visibles
 function countVisibleStations(layerInfo) {
   if (!layerInfo.data) return 0;
   const bounds = layerInfo.map.getBounds();
@@ -302,7 +313,7 @@ function countVisibleStations(layerInfo) {
   }).length;
 }
 
-// Mise à jour légende avec totaux
+// Légende (total seulement)
 function createLegend() {
   const legendDiv = document.getElementById('legend');
   legendDiv.innerHTML = '';
@@ -344,6 +355,7 @@ function createLegend() {
   });
 }
 
+// Chart.js setup avec valeurs au-dessus des barres
 const ctx = document.getElementById('chart').getContext('2d');
 
 const chart = new Chart(ctx, {
@@ -363,9 +375,16 @@ const chart = new Chart(ctx, {
       y: { beginAtZero: true }
     },
     plugins: {
-      legend: { display: false }
+      legend: { display: false },
+      datalabels: {
+        anchor: 'end',
+        align: 'end',
+        color: '#000',
+        font: { weight: 'bold' }
+      }
     }
-  }
+  },
+  plugins: [ChartDataLabels]
 });
 
 // Mise à jour stats : uniquement couches après 2020
@@ -384,33 +403,37 @@ function updateStats() {
   createLegend();
 }
 
-// Met à jour stats à chaque déplacement map
 afterMap.on('move', updateStats);
 beforeMap.on('move', updateStats);
 
-// --- Bouton toggle ---
-const container = document.getElementById('container');
-const statsDiv = document.getElementById('stats');
+// Bouton afficher/masquer stats + déplacer curseur
 const btnToggleStats = document.getElementById('btnToggleStats');
+const statsDiv = document.getElementById('stats');
+let statsVisible = false;
 
-const sliderPositions = [container.offsetWidth, container.offsetWidth / 2]; // droite et milieu
-let currentPosIndex = 1; // commence au milieu
+btnToggleStats.addEventListener('click', () => {
+  statsVisible = !statsVisible;
+  statsDiv.style.display = statsVisible ? 'block' : 'none';
+  btnToggleStats.textContent = statsVisible ? 'Masquer stat' : 'Afficher stat mandat visibles sur la carte';
 
-function toggleSlider() {
-  currentPosIndex = 1 - currentPosIndex; // bascule entre 0 et 1
-  compare.setSlider(sliderPositions[currentPosIndex]);
-
-  if (currentPosIndex === 0) {
-    statsDiv.style.display = 'block';
-    btnToggleStats.textContent = 'Masquer stat';
+  if (statsVisible) {
+    // Curseur complètement à droite (1)
+    compare.setSlider(1);
   } else {
-    statsDiv.style.display = 'none';
-    btnToggleStats.textContent = 'Afficher stat mandat visibles sur la carte';
+    // Curseur au milieu (0.5)
+    compare.setSlider(0.5);
   }
-}
+  updateLabels(statsVisible ? 1 : 0.5);
+  updateStats();
+});
 
-btnToggleStats.addEventListener('click', toggleSlider);
+// Ajouter contrôles zoom et rose des vents au afterMap (à droite)
+// On place controls sur afterMap (à gauche) pour que ce soit en haut à droite globale
+afterMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 
 </body>
 </html>
