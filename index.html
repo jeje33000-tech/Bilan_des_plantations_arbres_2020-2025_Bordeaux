@@ -9,7 +9,17 @@
 <style>
   body,html { margin:0; padding:0; height:100%; }
   #container { position:relative; width:100%; height:100vh; }
-  #before, #after { position:absolute; top:0; bottom:0; width:100%; }
+  #after, #before { position:absolute; top:0; bottom:0; width:100%; }
+  /* ordre des div dans le DOM : #after puis #before */
+  /* on force before à droite, after à gauche */
+  #after {
+    left: 0;
+    right: auto;
+  }
+  #before {
+    left: auto;
+    right: 0;
+  }
   .legend {
     position: absolute;
     top: 10px;
@@ -77,21 +87,17 @@
     padding: 10px;
     font-family: Arial, sans-serif;
     z-index: 1000;
-    display: none; /* caché par défaut */
+    display: none; /* caché au départ */
   }
-  #toggleStats {
+  #toggle-stats {
     position: absolute;
     bottom: 200px;
     right: 10px;
     z-index: 1100;
     padding: 6px 12px;
-    font-family: Arial, sans-serif;
     font-size: 14px;
+    font-family: Arial, sans-serif;
     cursor: pointer;
-    border-radius: 4px;
-    border: none;
-    background-color: #0078a8;
-    color: white;
   }
 </style>
 </head>
@@ -107,8 +113,7 @@
 
 <div id="legend" class="legend"></div>
 
-<button id="toggleStats">Afficher stats</button>
-
+<button id="toggle-stats">Afficher stats</button>
 <div id="stats"><canvas id="chart"></canvas></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
@@ -370,25 +375,25 @@ function updateStats() {
 afterMap.on('move', updateStats);
 beforeMap.on('move', updateStats);
 
-// Bouton afficher/masquer stats et déplacer slider
-const toggleStatsBtn = document.getElementById('toggleStats');
+// --- Bouton Afficher/Masquer stats ---
+const toggleStatsBtn = document.getElementById('toggle-stats');
 const statsDiv = document.getElementById('stats');
 
 toggleStatsBtn.onclick = () => {
-  if (statsDiv.style.display === 'none') {
+  // Utiliser getComputedStyle pour lire l'affichage réel
+  const statsVisible = window.getComputedStyle(statsDiv).display !== 'none';
+
+  if (!statsVisible) {
     statsDiv.style.display = 'block';
     toggleStatsBtn.textContent = 'Masquer stats';
-    compare.setSlider(2);  // Pousse le curseur à droite (before à droite)
+    compare.setSlider(1);  // Pousse la barre complètement à droite (voir avantMap à droite)
   } else {
     statsDiv.style.display = 'none';
     toggleStatsBtn.textContent = 'Afficher stats';
-    compare.setSlider(1); // Retour milieu
+    compare.setSlider(0.5); // Remet la barre au centre
   }
 };
 </script>
 
 </body>
 </html>
-
-
-
