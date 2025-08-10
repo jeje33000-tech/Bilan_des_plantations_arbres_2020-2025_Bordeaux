@@ -1,90 +1,69 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<title>Swipe Avant/Après corrigé</title>
+<meta charset="utf-8" />
+<title>Swipe Avant/Après - Stats visible sur "Après"</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
 <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" rel="stylesheet" />
 <style>
-  body,html { margin:0; padding:0; height:100%; }
+  html,body { margin:0; height:100%; }
   #container { position:relative; width:100%; height:100vh; }
-  #before, #after { position:absolute; top:0; bottom:0; width:100%; }
+  #before,#after { position:absolute; top:0; bottom:0; width:100%; }
   .legend {
     position: absolute;
     top: 10px;
     left: 10px;
+    background: rgba(255,255,255,0.95);
+    padding: 6px 8px;
+    border-radius:6px;
+    font-family: Arial, sans-serif;
+    font-size:12px;
+    z-index:1000;
+  }
+  .legend h4 { margin:4px 0; font-size:13px; }
+  .legend div { display:flex; align-items:center; gap:6px; margin:2px 0; }
+  .color-box { width:14px; height:12px; border:1px solid #444; flex-shrink:0; }
+  #label-left,#label-right {
+    position:absolute;
+    bottom:26px;
+    padding:6px 10px;
+    font-weight:bold;
     background: rgba(255,255,255,0.9);
-    padding: 6px 12px;
-    border-radius: 5px;
+    border-radius:4px;
     font-family: Arial, sans-serif;
-    font-size: 12px;
-    z-index: 1000;
-    max-width: 280px;
+    z-index:1000;
+    pointer-events:none;
+    transition:opacity .2s;
+    font-size:13px;
   }
-  .legend h4 {
-    margin: 6px 0 4px;
-    font-size: 13px;
-  }
-  .legend div {
-    display: flex;
-    align-items: center;
-    margin: 2px 0;
-  }
-  .legend span.color-box {
-    width: 18px;
-    height: 14px;
-    margin-right: 6px;
-    border: 1px solid #555;
-    flex-shrink: 0;
-  }
-  .legend span.count {
-    margin-left: auto;
-    font-weight: bold;
-    color: #333;
-  }
-  #label-left, #label-right {
-    position: absolute;
-    bottom: 30px;
-    padding: 5px 12px;
-    font-size: 14px;
-    font-weight: bold;
-    background: rgba(255,255,255,0.85);
-    border-radius: 3px;
-    pointer-events: none;
-    font-family: Arial, sans-serif;
-    white-space: nowrap;
-    z-index: 1000;
-    transition: opacity 0.3s ease;
-  }
-  #label-right::after {
-    content: " ➔";
-  }
-  #label-left {
-    left: 10px;
-  }
-  #label-right {
-    right: 10px;
-  }
+  #label-left { left:10px; }
+  #label-right { right:10px; }
+  #label-right::after { content: " ➔"; }
   #stats {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    width: 280px;
-    height: 180px;
-    background: rgba(255,255,255,0.9);
-    border-radius: 5px;
-    padding: 10px;
+    position:absolute;
+    bottom:10px;
+    right:10px;
+    width:260px;
+    height:170px;
+    background: rgba(255,255,255,0.95);
+    border-radius:6px;
+    padding:8px;
     font-family: Arial, sans-serif;
-    z-index: 1000;
+    z-index:1000;
+  }
+  /* small responsive */
+  @media (max-width:480px){
+    .legend{font-size:11px}
+    #stats{width:200px;height:140px}
   }
 </style>
 </head>
 <body>
 
 <div id="container">
-  <div id="after"></div> <!-- inversé: after à gauche -->
-  <div id="before"></div> <!-- before à droite -->
+  <div id="after"></div>  <!-- carte après (gauche sous swipe) -->
+  <div id="before"></div> <!-- carte avant (droite) -->
 </div>
 
 <div id="label-left">Après 2020</div>
@@ -98,11 +77,11 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+/* === CONFIG === */
 mapboxgl.accessToken = 'pk.eyJ1IjoiamVqZTMzMDAwIiwiYSI6ImNtZTJ2c3RnaDAwczEyanF6bW9wODI0cTgifQ.AYOAKWDyDLP_fbKIz-QdwQ';
-
 const centerBordeaux = [-0.57409, 44.861022];
 
-// on inverse ici les conteneurs: "after" à gauche, "before" à droite
+/* === INITIALISATION CARTES === */
 const afterMap = new mapboxgl.Map({
   container: 'after',
   style: 'mapbox://styles/mapbox/dark-v11',
@@ -116,267 +95,323 @@ const beforeMap = new mapboxgl.Map({
   zoom: 11.5
 });
 
-// On inverse l'ordre des maps dans compare pour correspondre au conteneur
-const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {});
+// navigation controls
+afterMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom:true }), 'top-right');
+beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom:true }), 'top-right');
 
-// Couches avant (sur beforeMap)
+// compare (after à gauche, before à droite)
+const compare = new mapboxgl.Compare(afterMap, beforeMap, document.getElementById('container'), {});
+
+// helper to read slider position robustly
+function getSliderPos() {
+  if (typeof compare.getSliderPosition === 'function') return compare.getSliderPosition();
+  if (compare._slider && typeof compare._slider._pos === 'number') return compare._slider._pos;
+  // fallback middle
+  return 0.5;
+}
+
+/* === LAYERS CONFIG (fichiers geojson dans le même dossier) === */
 const layersAvant = [
-  { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2020', data: null, totalCount: 0, visibleCount: 0 }
+  { map: beforeMap, id: 'avant-layer', source: 'avant', file: 'avant.geojson', color: '#2E8B57', label: 'Stations avant 2020', data: null, totalCount:0 }
 ];
-
-// Couches après (sur afterMap)
 const layersApres = [
-  { map: afterMap, id: 'apres1-layer', source: 'apres1', color: '#FF4500', label: 'Stations créées ou en cours', data: null, totalCount: 0, visibleCount: 0 },
-  { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Stations remplacées/densifiées', data: null, totalCount: 0, visibleCount: 0 },
-  { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'green', label: 'Stations non plantées', data: null, totalCount: 0, visibleCount: 0 }
+  { map: afterMap, id: 'apres1-layer', source:'apres1', file:'apres1.geojson', color:'#FF4500', label:'Stations créées ou en cours', data:null, totalCount:0 },
+  { map: afterMap, id: 'apres2-layer', source:'apres2', file:'apres2.geojson', color:'orange', label:'Stations remplacées/densifiées', data:null, totalCount:0 },
+  { map: afterMap, id: 'apres3-layer', source:'apres3', file:'apres3.geojson', color:'green', label:'Stations non plantées', data:null, totalCount:0 }
 ];
 
 let popup = null;
 
+/* util: centroid approximatif (moyenne des sommets du premier anneau) */
+function featureCentroid(feature){
+  if(!feature || !feature.geometry) return null;
+  const g = feature.geometry;
+  if (g.type === 'Point') return g.coordinates;
+  if (g.type === 'Polygon' && Array.isArray(g.coordinates[0]) ) {
+    const ring = g.coordinates[0];
+    let sx=0, sy=0, n=0;
+    ring.forEach(pt => { sx += pt[0]; sy += pt[1]; n++; });
+    return n? [sx/n, sy/n] : null;
+  }
+  if (g.type === 'MultiPolygon' && Array.isArray(g.coordinates[0]) && Array.isArray(g.coordinates[0][0])) {
+    const ring = g.coordinates[0][0];
+    let sx=0, sy=0, n=0;
+    ring.forEach(pt => { sx += pt[0]; sy += pt[1]; n++; });
+    return n? [sx/n, sy/n] : null;
+  }
+  return null;
+}
+
+/* addLayer -> ajoute couche, label et source de highlight séparée pour mise à jour facile */
 async function addLayer(info) {
   try {
-    const response = await fetch(info.source + '.geojson');
-    if (!response.ok) throw new Error('Erreur chargement ' + info.source + '.geojson');
-    const geojson = await response.json();
+    const res = await fetch(info.file);
+    if(!res.ok) throw new Error('Erreur chargement ' + info.file);
+    const geojson = await res.json();
     info.data = geojson;
-    info.totalCount = geojson.features.length;
+    info.totalCount = geojson.features ? geojson.features.length : 0;
 
-    info.map.addSource(info.source, {
-      type: 'geojson',
-      data: geojson
-    });
+    // source
+    if (!info.map.getSource(info.source)) {
+      info.map.addSource(info.source, { type:'geojson', data: geojson });
+    } else {
+      info.map.getSource(info.source).setData(geojson);
+    }
 
-    info.map.addLayer({
-      id: info.id,
-      type: 'fill',
-      source: info.source,
-      paint: {
-        'fill-color': info.color,
-        'fill-opacity': 0.6
-      }
-    });
-
-    // Surbrillance pour afterMap
-    if (info.map === afterMap) {
+    // fill
+    if (!info.map.getLayer(info.id)) {
       info.map.addLayer({
-        id: info.id + '-highlight',
+        id: info.id,
         type: 'fill',
         source: info.source,
         paint: {
-          'fill-color': '#ffff00',
-          'fill-opacity': 0.3
-        },
-        filter: ['==', 'fid', ''] // filtre vide par défaut
+          'fill-color': info.color,
+          'fill-opacity': 0.6
+        }
       });
     }
 
-    info.map.addLayer({
-      id: info.id + '-label',
-      type: 'symbol',
-      source: info.source,
-      layout: {
-        'text-field': ['get', 'CODE_STATION'],
-        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-        'text-size': 11,
-        'text-offset': [0, 0],
-        'text-anchor': 'center',
-        'visibility': 'none'
-      },
-      paint: {
-        'text-color': info.color,
-        'text-halo-color': '#000',
-        'text-halo-width': 1
+    // highlight source + layer (seul pour afterMap)
+    const highlightSourceId = info.id + '-highlight-src';
+    const highlightLayerId = info.id + '-highlight';
+    if (info.map === afterMap) {
+      if (!info.map.getSource(highlightSourceId)) {
+        info.map.addSource(highlightSourceId, { type:'geojson', data: { type:'FeatureCollection', features: [] } });
+        info.map.addLayer({
+          id: highlightLayerId,
+          type: 'fill',
+          source: highlightSourceId,
+          paint: {
+            'fill-color': '#ffff00',
+            'fill-opacity': 0.30
+          }
+        });
       }
+    }
+
+    // label layer
+    const labelLayerId = info.id + '-label';
+    if (!info.map.getLayer(labelLayerId)) {
+      info.map.addLayer({
+        id: labelLayerId,
+        type: 'symbol',
+        source: info.source,
+        layout: {
+          'text-field': ['coalesce', ['get', 'CODE_STATION'], ''],
+          'text-font': ['Open Sans Bold','Arial Unicode MS Bold'],
+          'text-size': 11,
+          'text-anchor': 'center',
+          'visibility': (info.map.getZoom() >= 15 ? 'visible' : 'none')
+        },
+        paint: {
+          'text-color': info.color,
+          'text-halo-color': '#000',
+          'text-halo-width': 1
+        }
+      });
+    }
+
+    // events : labels visibility on zoom
+    info.map.on('zoomend', () => {
+      const visibility = info.map.getZoom() >= 15 ? 'visible' : 'none';
+      if (info.map.getLayer(labelLayerId) && info.map.getLayoutProperty(labelLayerId, 'visibility') !== visibility) {
+        info.map.setLayoutProperty(labelLayerId, 'visibility', visibility);
+      }
+      updateStats();
     });
 
-    info.map.on('zoom', () => {
-      const zoom = info.map.getZoom();
-      const visibility = zoom >= 15 ? 'visible' : 'none';
-      if (info.map.getLayoutProperty(info.id + '-label', 'visibility') !== visibility) {
-        info.map.setLayoutProperty(info.id + '-label', 'visibility', visibility);
-      }
-    });
+    // moves -> update stats (we update only afterMap view)
+    if (info.map === afterMap) {
+      info.map.on('moveend', updateStats);
+    }
 
-    // Interaction popup clic
+    // feature click -> popup + set highlight source data
     info.map.on('click', info.id, (e) => {
-      if (!e.features.length) return;
+      if (!e || !e.features || !e.features.length) return;
       const feature = e.features[0];
-      const coordinates = e.lngLat;
-      const codeStation = feature.properties.CODE_STATION || 'N/A';
+      const coords = e.lngLat;
+      const code = (feature.properties && feature.properties.CODE_STATION) ? feature.properties.CODE_STATION : 'N/A';
 
+      // popup
       if (popup) popup.remove();
-
-      popup = new mapboxgl.Popup()
-        .setLngLat(coordinates)
-        .setHTML(`<strong>Code station:</strong> ${codeStation}`)
+      popup = new mapboxgl.Popup({ offset: 6 })
+        .setLngLat(coords)
+        .setHTML(`<strong>CODE_STATION</strong>: ${code}`)
         .addTo(info.map);
+
+      // highlight: set highlight source data = this feature
+      if (info.map === afterMap) {
+        const highlightSource = info.map.getSource(info.id + '-highlight-src');
+        if (highlightSource) {
+          highlightSource.setData({ type:'FeatureCollection', features: [feature] });
+        }
+      }
     });
 
-    // Curseur pointer
-    info.map.on('mouseenter', info.id, () => {
-      info.map.getCanvas().style.cursor = 'pointer';
-    });
-    info.map.on('mouseleave', info.id, () => {
-      info.map.getCanvas().style.cursor = '';
-    });
+    // click anywhere on afterMap outside features -> clear highlight and popup
+    if (info.map === afterMap) {
+      info.map.on('click', (e) => {
+        const hits = afterMap.queryRenderedFeatures(e.point, { layers: layersApres.map(l=>l.id) });
+        if (!hits.length) {
+          // clear highlight sources
+          layersApres.forEach(l => {
+            const src = afterMap.getSource(l.id + '-highlight-src');
+            if (src) src.setData({ type:'FeatureCollection', features: [] });
+          });
+          if (popup) { popup.remove(); popup = null; }
+        }
+      });
+    }
+
+    // cursor pointer
+    info.map.on('mouseenter', info.id, () => { info.map.getCanvas().style.cursor = 'pointer'; });
+    info.map.on('mouseleave', info.id, () => { info.map.getCanvas().style.cursor = ''; });
 
   } catch (err) {
-    console.error('Erreur chargement couche ' + info.source, err);
+    console.error(err);
   }
 }
 
-async function loadAllLayers() {
-  for (const layer of [...layersAvant, ...layersApres]) {
-    await addLayer(layer);
-  }
-}
-
-loadAllLayers().then(() => {
+/* charge toutes les couches */
+async function loadAll() {
+  const all = [...layersAvant, ...layersApres];
+  for (const l of all) await addLayer(l);
+  createLegend();
+  initChart();
   updateStats();
-});
-
-const labelLeft = document.getElementById('label-left');
-const labelRight = document.getElementById('label-right');
-
-function updateLabels(sliderPos) {
-  labelLeft.style.opacity = sliderPos;
-  labelRight.style.opacity = 1 - sliderPos;
 }
+loadAll();
 
-compare.on('slide', e => {
-  updateLabels(e.detail);
-  updateStats();
-});
-updateLabels(0);
-
-// Calcule les bounds visibles de la partie "Après" (gauche) selon position slider
+/* calcule bounds géographiques de la portion visible LEFT (afterMap) */
 function getVisibleBoundsAfter() {
   const container = document.getElementById('container');
-  const containerWidth = container.clientWidth;
+  const containerRect = container.getBoundingClientRect();
+  const containerWidth = containerRect.width;
 
-  // Position du slider (entre 0 et 1)
-  const sliderPos = compare._slider ? compare._slider._pos : 0.5;
+  // position du slider (0..1)
+  const sliderPos = getSliderPos();
 
-  // Largeur visible pour afterMap (à gauche)
-  const visibleWidth = containerWidth * sliderPos;
+  // visible width in container pixels for afterMap
+  const visibleWidth = Math.max(0, Math.min(containerWidth, sliderPos * containerWidth));
 
-  const map = afterMap;
-  const canvas = map.getCanvas();
-  const canvasHeight = canvas.height;
+  // canvas rect of afterMap
+  const canvasRect = afterMap.getCanvas().getBoundingClientRect();
+  const offsetX = canvasRect.left - containerRect.left; // offset of canvas relative to container
 
-  // Coordonnées géographiques du rectangle visible (en pixels [0,0] -> [visibleWidth, canvasHeight])
-  const topLeft = map.unproject([0, 0]);
-  const bottomRight = map.unproject([visibleWidth, canvasHeight]);
+  // compute pixel coords relative to canvas
+  const leftPx = 0 - offsetX;
+  const rightPx = visibleWidth - offsetX;
+
+  // clamp to canvas bounds
+  const clampedLeft = Math.max(0, Math.min(canvasRect.width, leftPx));
+  const clampedRight = Math.max(0, Math.min(canvasRect.width, rightPx));
+
+  // if no visible width within canvas -> return empty bounds (so count = 0)
+  if (clampedRight <= 0) {
+    // return bounds that contains nothing by using a tiny degenerate area
+    const p = afterMap.getCenter();
+    return new mapboxgl.LngLatBounds([p.lng+0.0000001,p.lat+0.0000001],[p.lng+0.0000002,p.lat+0.0000002]);
+  }
+
+  // unproject top-left and bottom-right in canvas pixel coordinates
+  const topLeft = afterMap.unproject([clampedLeft, 0]);
+  const bottomRight = afterMap.unproject([clampedRight, canvasRect.height]);
 
   return new mapboxgl.LngLatBounds(topLeft, bottomRight);
 }
 
-// Compter stations visibles uniquement dans la portion visible "Après"
-function countVisibleStationsAfter(layerInfo) {
-  if (!layerInfo.data) return 0;
+/* compte features des layersApres dans les bounds visible after */
+function countVisibleAfterForLayer(layerInfo) {
+  if(!layerInfo.data || !layerInfo.data.features) return 0;
   const bounds = getVisibleBoundsAfter();
-
-  return layerInfo.data.features.filter(f => {
-    let coord = null;
-    if (f.geometry.type === 'Point') {
-      coord = f.geometry.coordinates;
-    } else if (f.geometry.type === 'Polygon') {
-      coord = f.geometry.coordinates[0][0];
-    } else if (f.geometry.type === 'MultiPolygon') {
-      coord = f.geometry.coordinates[0][0][0];
-    }
-    return coord ? bounds.contains(coord) : false;
-  }).length;
-}
-
-// Mise à jour légende (total seulement)
-function createLegend() {
-  const legendDiv = document.getElementById('legend');
-  legendDiv.innerHTML = '';
-
-  const avantTitle = document.createElement('h4');
-  avantTitle.textContent = 'Avant 2020';
-  legendDiv.appendChild(avantTitle);
-  layersAvant.forEach(l => {
-    if(!l.data) return;
-    const item = document.createElement('div');
-    const colorBox = document.createElement('span');
-    colorBox.className = 'color-box';
-    colorBox.style.backgroundColor = l.color;
-    item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(`${l.label} (total)`));
-    const countSpan = document.createElement('span');
-    countSpan.className = 'count';
-    countSpan.textContent = `${l.totalCount}`;
-    item.appendChild(countSpan);
-    legendDiv.appendChild(item);
-  });
-
-  const apresTitle = document.createElement('h4');
-  apresTitle.textContent = 'Après 2020';
-  legendDiv.appendChild(apresTitle);
-  layersApres.forEach(l => {
-    if(!l.data) return;
-    const item = document.createElement('div');
-    const colorBox = document.createElement('span');
-    colorBox.className = 'color-box';
-    colorBox.style.backgroundColor = l.color;
-    item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(`${l.label} (total)`));
-    const countSpan = document.createElement('span');
-    countSpan.className = 'count';
-    countSpan.textContent = `${l.totalCount}`;
-    item.appendChild(countSpan);
-    legendDiv.appendChild(item);
-  });
-}
-
-const ctx = document.getElementById('chart').getContext('2d');
-
-const chart = new Chart(ctx, {
-  type: 'bar',
-  data: {
-    labels: [],
-    datasets: [{
-      label: 'Nombre stations visibles',
-      data: [],
-      backgroundColor: []
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: { beginAtZero: true }
-    },
-    plugins: {
-      legend: { display: false }
-    }
+  let n = 0;
+  for (const f of layerInfo.data.features) {
+    const coord = featureCentroid(f);
+    if (!coord) continue;
+    if (bounds.contains(coord)) n++;
   }
+  return n;
+}
+
+/* ===== LEGEND ===== */
+function createLegend(){
+  const el = document.getElementById('legend');
+  el.innerHTML = '';
+  const h1 = document.createElement('h4'); h1.textContent = 'Avant 2020'; el.appendChild(h1);
+  layersAvant.forEach(l => {
+    if (!l.data) return;
+    const row = document.createElement('div');
+    const c = document.createElement('span'); c.className='color-box'; c.style.background = l.color;
+    row.appendChild(c);
+    row.appendChild(document.createTextNode(l.label + ' (total)'));
+    const s = document.createElement('span'); s.className='count'; s.textContent = l.totalCount;
+    row.appendChild(s);
+    el.appendChild(row);
+  });
+  const h2 = document.createElement('h4'); h2.textContent = 'Après 2020'; el.appendChild(h2);
+  layersApres.forEach(l => {
+    if (!l.data) return;
+    const row = document.createElement('div');
+    const c = document.createElement('span'); c.className='color-box'; c.style.background = l.color;
+    row.appendChild(c);
+    row.appendChild(document.createTextNode(l.label + ' (total)'));
+    const s = document.createElement('span'); s.className='count'; s.textContent = l.totalCount;
+    row.appendChild(s);
+    el.appendChild(row);
+  });
+}
+
+/* ===== CHART ===== */
+let chartInstance = null;
+function initChart(){
+  const ctx = document.getElementById('chart').getContext('2d');
+  chartInstance = new Chart(ctx, {
+    type:'bar',
+    data:{ labels: layersApres.map(l=>l.label), datasets:[{ label:'Stations visibles (Après)', data: layersApres.map(()=>0), backgroundColor: layersApres.map(l=>l.color) }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } },
+      plugins:{ legend:{ display:false } }
+    }
+  });
+}
+
+/* ===== UPDATE STATS (uniquement layersApres et uniquement portion après) ===== */
+function updateStats(){
+  // recalcul visible counts
+  layersApres.forEach(l => {
+    l.visibleCount = countVisibleAfterForLayer(l);
+  });
+
+  // update chart data
+  if(chartInstance){
+    chartInstance.data.labels = layersApres.map(l=>l.label);
+    chartInstance.data.datasets[0].data = layersApres.map(l=>l.visibleCount);
+    chartInstance.data.datasets[0].backgroundColor = layersApres.map(l=>l.color);
+    chartInstance.update();
+  }
+
+  // debug
+  // console.log('visible counts', layersApres.map(l=>({label:l.label, visible:l.visibleCount})));
+}
+
+/* update labels opacity when slider moves */
+compare.on('slide', (e) => {
+  const pos = (typeof e.detail === 'number') ? e.detail : getSliderPos();
+  document.getElementById('label-left').style.opacity = pos;
+  document.getElementById('label-right').style.opacity = 1 - pos;
+  updateStats();
 });
 
-// Mise à jour stats : uniquement couches après 2020
-function updateStats() {
-  layersApres.forEach(l => {
-    l.visibleCount = countVisibleStationsAfter(l);
-    console.log(l.label, 'visible count:', l.visibleCount);
-  });
+/* also refresh stats on afterMap moveend/zoomend so panning/zoom triggers recalc */
+afterMap.on('moveend', updateStats);
+afterMap.on('zoomend', updateStats);
 
-  const allLayers = layersApres;
-
-  chart.data.labels = allLayers.map(l => l.label);
-  chart.data.datasets[0].data = allLayers.map(l => l.visibleCount);
-  chart.data.datasets[0].backgroundColor = allLayers.map(l => l.color);
-  chart.update();
-
-  createLegend();
-}
-
-// Évènements de déplacement / zoom : on met à jour stats
-afterMap.on('move', updateStats);
-afterMap.on('zoom', updateStats);
+/* finally, refresh stats on window resize (slider layout changes) */
+window.addEventListener('resize', () => { setTimeout(()=>{ updateStats(); }, 120); });
 
 </script>
-
 </body>
 </html>
+
+
