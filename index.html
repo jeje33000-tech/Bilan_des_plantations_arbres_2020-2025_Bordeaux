@@ -19,22 +19,12 @@
     color: white;
     font-weight: bold;
     font-size: 18px;
-    line-height: 50px;
+    line-height: 36px;
     text-align: center;
     z-index: 1500;
     user-select: none;
   }
-  /* Container cartes sous la banière */
-  #container {
-    position: relative;
-    width: 100%;
-    height: calc(100vh - 50px); /* sous la banière */
-    top: 50px;
-  }
-  #before, #after {
-    position: absolute;
-    top: 0; bottom: 0; width: 100%;
-  }
+
   /* Légende */
   .legend {
     position: absolute;
@@ -86,10 +76,10 @@
   /* Graphique en bas à gauche */
   #stats {
     position: absolute;
-    bottom: 60px;
+    bottom: 10px;
     left: 10px;
     width: 280px;
-    height: 200px;
+    height: 180px;
     background: rgba(255,255,255,0.9);
     border-radius: 5px;
     padding: 10px;
@@ -98,9 +88,9 @@
     display: none; /* caché par défaut */
   }
   /* Labels en bas */
-   #label-right {
-    position: fixed;
-    bottom: 40px;
+  #label-left, #label-right {
+    position: absolute;
+    bottom: 30px;
     padding: 5px 12px;
     font-size: 14px;
     font-weight: bold;
@@ -108,39 +98,23 @@
     border-radius: 3px;
     pointer-events: none;
     white-space: nowrap;
-    z-index: 9999;
+    z-index: 1000;
     transition: opacity 0.3s ease;
-    display: block !important;
-  visibility: visible !important;
   }
-
- 
- #label-left {
-  position: fixed;
-  bottom: 40px;
-  left: 10px;
-  padding: 6px 12px;
-  font-size: 14px;
-  font-weight: bold;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 3px;
-  pointer-events: none;
-  white-space: nowrap;
-  z-index: 99999;
-  color: black;
-  box-shadow: 0 0 4px rgba(0,0,0,0.3);
-  user-select: none;
-
+  #label-left {
+    left: 10px;
   }
-#label-left::after {
-  content: " ➔";
-}
- 
+  #label-right {
+    right: 10px;
+  }
+  #label-left::after {
+    content: " ➔";
+  }
   /* Surbrillance */
   .mapboxgl-compare .mapboxgl-map canvas {
     transition: opacity 0.3s ease;
   }
-  /* Supprimer ascenseurs (scrollbars) */
+/* Supprimer ascenseurs (scrollbars) */
   #container, #before, #after {
     overflow: hidden !important;
   }
@@ -156,7 +130,7 @@
 <div class="legend" id="legend"></div>
 <button id="btnToggleStats">Afficher stat mandat visibles sur la carte</button>
 
-
+<div id="stats"><canvas id="chart"></canvas></div>
 
 <div id="label-left">Après 2020</div>
 <div id="label-right">Avant 2020</div>
@@ -237,13 +211,13 @@ async function addLayer(info) {
       });
     }
 
-    // Label ion (visible à zoom >= 15)
+    // Label station (visible à zoom >= 15)
     info.map.addLayer({
       id: info.id + '-label',
       type: 'symbol',
       source: info.source,
       layout: {
-        'text-field': ['get', 'CODE_ION'],
+        'text-field': ['get', 'CODE_STATION'],
         'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
         'text-size': 11,
         'text-offset': [0, 0],
@@ -282,13 +256,13 @@ async function addLayer(info) {
       if (!e.features.length) return;
       const feature = e.features[0];
       const coordinates = e.lngLat;
-      const codeion = feature.properties.CODE_ION || 'N/A';
+      const codeStation = feature.properties.CODE_STATION || 'N/A';
 
       if (popup) popup.remove();
 
       popup = new mapboxgl.Popup()
         .setLngLat(coordinates)
-        .setHTML(`<strong>Code ion:</strong> ${codeion}`)
+        .setHTML(`<strong>Code station:</strong> ${codeStation}`)
         .addTo(info.map);
     });
 
@@ -304,181 +278,3 @@ async function addLayer(info) {
     console.error('Erreur chargement couche ' + info.source, err);
   }
 }
-
-async function loadAllLayers() {
-  for (const layer of [...layersAvant, ...layersApres]) {
-    await addLayer(layer);
-  }
-}
-
-loadAllLayers().then(() => {
-  updates();
-});
-
-const labelLeft = document.getElementById('label-left');
-const labelRight = document.getElementById('label-right');
-
-function updateLabels(sliderPos) {
-  labelLeft.style.opacity = sliderPos;
-  labelRight.style.opacity = 1 - sliderPos;
-}
-
-compare.on('slide', e => {
-  updateLabels(e.detail);
-  updates();
-});
-updateLabels(0);
-
-// Fonction qui compte les ions visibles dans la vue courante
-function countVisibleions(layerInfo) {
-  if (!layerInfo.data) return 0;
-  const bounds = layerInfo.map.getBounds();
-
-  return layerInfo.data.features.filter(f => {
-    let coord = null;
-    if (f.geometry.type === 'Point') {
-      coord = f.geometry.coordinates;
-    } else if (f.geometry.type === 'Polygon') {
-      coord = f.geometry.coordinates[0][0];
-    } else if (f.geometry.type === 'MultiPolygon') {
-      coord = f.geometry.coordinates[0][0][0];
-    }
-    return coord ? bounds.contains(coord) : false;
-  }).length;
-}
-
-// Mise à jour légende avec totaux
-function createLegend() {
-  const legendDiv = document.getElementById('legend');
-  legendDiv.innerHTML = '';
-
-  const avantTitle = document.createElement('h4');
-  avantTitle.textContent = 'Avant 2020';
-  legendDiv.appendChild(avantTitle);
-  layersAvant.forEach(l => {
-    if(!l.data) return;
-    const item = document.createElement('div');
-    const colorBox = document.createElement('span');
-    colorBox.className = 'color-box';
-    colorBox.style.backgroundColor = l.color;
-    item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(`${l.label} (total)`));
-    const countSpan = document.createElement('span');
-    countSpan.className = 'count';
-    countSpan.textContent = `${l.totalCount}`;
-    item.appendChild(countSpan);
-    legendDiv.appendChild(item);
-  });
-
-  const apresTitle = document.createElement('h4');
-  apresTitle.textContent = 'Après 2020';
-  legendDiv.appendChild(apresTitle);
-  layersApres.forEach(l => {
-    if(!l.data) return;
-    const item = document.createElement('div');
-    const colorBox = document.createElement('span');
-    colorBox.className = 'color-box';
-    colorBox.style.backgroundColor = l.color;
-    item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(`${l.label} (total)`));
-    const countSpan = document.createElement('span');
-    countSpan.className = 'count';
-    countSpan.textContent = `${l.totalCount}`;
-    item.appendChild(countSpan);
-    legendDiv.appendChild(item);
-  });
-}
-
-const ctx = document.getElementById('chart').getContext('2d');
-
-const chart = new Chart(ctx, {
-  type: 'bar',
-  data: {
-    labels: [],
-    datasets: [{
-      label: 'Nombre ions visibles',
-      data: [],
-      backgroundColor: []
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: { beginAtZero: true }
-    },
-    plugins: {
-      legend: { display: false }
-    }
-  }
-});
-
-
-// Mise à jour s : uniquement couches après 2020
-function updates() {
-  layersApres.forEach(l => {
-    l.visibleCount = countVisibleions(l);
-  });
-
-  const allLayers = layersApres;
-
-  chart.data.labels = allLayers.map(l => l.label);
-  chart.data.datasets[0].data = allLayers.map(l => l.visibleCount);
-  chart.data.datasets[0].backgroundColor = allLayers.map(l => l.color);
-  chart.update();
-
-  createLegend();
-}
-
-// Met à jour s à chaque déplacement map
-afterMap.on('move', updates);
-beforeMap.on('move', updates);
-
-// --- Bouton toggle ---
-const container = document.getElementById('container');
-const sDiv = document.getElementById('s');
-const btnToggles = document.getElementById('btnToggles');
-
-const sliderPositions = [container.offsetWidth, container.offsetWidth / 2]; // droite et milieu
-let currentPosIndex = 1; // commence au milieu
-
-function toggleSlider() {
-  currentPosIndex = 1 - currentPosIndex; // bascule entre 0 et 1
-  compare.setSlider(sliderPositions[currentPosIndex]);
-
-  if (currentPosIndex === 0) {
-    sDiv.style.display = 'block';
-    btnToggles.textContent = 'Masquer ';
-  } else {
-    sDiv.style.display = 'none';
-    btnToggles.textContent = 'Afficher  mandat visibles sur la carte';
-  }
-}
-
-btnToggles.addEventListener('click', toggleSlider);
-
- afterMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
-beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
-  
- 
-</script>
-
-</body>
-</html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
