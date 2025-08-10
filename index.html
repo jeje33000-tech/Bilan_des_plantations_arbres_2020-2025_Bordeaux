@@ -100,7 +100,7 @@
   /* Labels en bas */
   #label-left, #label-right {
     position: absolute;
-    bottom: 30px;
+    bottom: 40px;
     padding: 5px 12px;
     font-size: 14px;
     font-weight: bold;
@@ -108,7 +108,7 @@
     border-radius: 3px;
     pointer-events: none;
     white-space: nowrap;
-    z-index: 1000;
+    z-index: 1500;
     transition: opacity 0.3s ease;
   }
   #label-left {
@@ -441,13 +441,15 @@ function toggleSlider() {
 
 btnToggleStats.addEventListener('click', toggleSlider);
 
-  beforeMap.addcontrol(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+ afterMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
   
  
 </script>
 
 </body>
 </html>
+
 
 
 
