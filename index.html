@@ -439,10 +439,14 @@ function toggleSlider() {
 }
 
 btnToggleStats.addEventListener('click', toggleSlider);
+
+  beforeMap.addcontrol(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+ 
 </script>
 
 </body>
 </html>
+
 
 
 
