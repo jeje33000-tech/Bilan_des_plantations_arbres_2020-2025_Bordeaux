@@ -278,3 +278,162 @@ async function addLayer(info) {
     console.error('Erreur chargement couche ' + info.source, err);
   }
 }
+
+async function loadAllLayers() {
+  for (const layer of [...layersAvant, ...layersApres]) {
+    await addLayer(layer);
+  }
+}
+
+loadAllLayers().then(() => {
+  updateStats();
+});
+
+const labelLeft = document.getElementById('label-left');
+const labelRight = document.getElementById('label-right');
+
+function updateLabels(sliderPos) {
+  labelLeft.style.opacity = sliderPos;
+  labelRight.style.opacity = 1 - sliderPos;
+}
+
+compare.on('slide', e => {
+  updateLabels(e.detail);
+  updateStats();
+});
+updateLabels(0);
+
+// Fonction qui compte les stations visibles dans la vue courante
+function countVisibleStations(layerInfo) {
+  if (!layerInfo.data) return 0;
+  const bounds = layerInfo.map.getBounds();
+
+  return layerInfo.data.features.filter(f => {
+    let coord = null;
+    if (f.geometry.type === 'Point') {
+      coord = f.geometry.coordinates;
+    } else if (f.geometry.type === 'Polygon') {
+      coord = f.geometry.coordinates[0][0];
+    } else if (f.geometry.type === 'MultiPolygon') {
+      coord = f.geometry.coordinates[0][0][0];
+    }
+    return coord ? bounds.contains(coord) : false;
+  }).length;
+}
+
+// Mise à jour légende avec totaux
+function createLegend() {
+  const legendDiv = document.getElementById('legend');
+  legendDiv.innerHTML = '';
+
+  const avantTitle = document.createElement('h4');
+  avantTitle.textContent = 'Avant 2020';
+  legendDiv.appendChild(avantTitle);
+  layersAvant.forEach(l => {
+    if(!l.data) return;
+    const item = document.createElement('div');
+    const colorBox = document.createElement('span');
+    colorBox.className = 'color-box';
+    colorBox.style.backgroundColor = l.color;
+    item.appendChild(colorBox);
+    item.appendChild(document.createTextNode(`${l.label} (total)`));
+    const countSpan = document.createElement('span');
+    countSpan.className = 'count';
+    countSpan.textContent = `${l.totalCount}`;
+    item.appendChild(countSpan);
+    legendDiv.appendChild(item);
+  });
+
+  const apresTitle = document.createElement('h4');
+  apresTitle.textContent = 'Après 2020';
+  legendDiv.appendChild(apresTitle);
+  layersApres.forEach(l => {
+    if(!l.data) return;
+    const item = document.createElement('div');
+    const colorBox = document.createElement('span');
+    colorBox.className = 'color-box';
+    colorBox.style.backgroundColor = l.color;
+    item.appendChild(colorBox);
+    item.appendChild(document.createTextNode(`${l.label} (total)`));
+    const countSpan = document.createElement('span');
+    countSpan.className = 'count';
+    countSpan.textContent = `${l.totalCount}`;
+    item.appendChild(countSpan);
+    legendDiv.appendChild(item);
+  });
+}
+
+const ctx = document.getElementById('chart').getContext('2d');
+
+const chart = new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: [],
+    datasets: [{
+      label: 'Nombre stations visibles',
+      data: [],
+      backgroundColor: []
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: { beginAtZero: true }
+    },
+    plugins: {
+      legend: { display: false }
+    }
+  }
+});
+
+// Mise à jour stats : uniquement couches après 2020
+function updateStats() {
+  layersApres.forEach(l => {
+    l.visibleCount = countVisibleStations(l);
+  });
+
+  const allLayers = layersApres;
+
+  chart.data.labels = allLayers.map(l => l.label);
+  chart.data.datasets[0].data = allLayers.map(l => l.visibleCount);
+  chart.data.datasets[0].backgroundColor = allLayers.map(l => l.color);
+  chart.update();
+
+  createLegend();
+}
+
+// Met à jour stats à chaque déplacement map
+afterMap.on('move', updateStats);
+beforeMap.on('move', updateStats);
+
+// --- Bouton toggle ---
+const container = document.getElementById('container');
+const statsDiv = document.getElementById('stats');
+const btnToggleStats = document.getElementById('btnToggleStats');
+
+const sliderPositions = [container.offsetWidth, container.offsetWidth / 2]; // droite et milieu
+let currentPosIndex = 1; // commence au milieu
+
+function toggleSlider() {
+  currentPosIndex = 1 - currentPosIndex; // bascule entre 0 et 1
+  compare.setSlider(sliderPositions[currentPosIndex]);
+
+  if (currentPosIndex === 0) {
+    statsDiv.style.display = 'block';
+    btnToggleStats.textContent = 'Masquer stat';
+  } else {
+    statsDiv.style.display = 'none';
+    btnToggleStats.textContent = 'Afficher stat mandat visibles sur la carte';
+  }
+}
+// Ajout des contrôles zoom et boussole en haut à droite
+afterMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+
+  btnToggleStats.addEventListener('click', toggleSlider);
+</script>
+
+</body>
+</html>
+
