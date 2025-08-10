@@ -98,7 +98,7 @@
     display: none; /* caché par défaut */
   }
   /* Labels en bas */
-  #label-left, #label-right {
+   #label-right {
     position: fixed;
     bottom: 40px;
     padding: 5px 12px;
@@ -113,15 +113,33 @@
     display: block !important;
   visibility: visible !important;
   }
-  #label-left {
-    left: 10px;
-  }
+
   #label-right {
     right: 10px;
+     }
+ #label-left {
+  position: fixed;
+  bottom: 40px;
+  left: 10px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 3px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 99999;
+  color: black;
+  box-shadow: 0 0 4px rgba(0,0,0,0.3);
+  user-select: none;
+}
+    #label-left {
+    left: 10px;
   }
-  #label-left::after {
-    content: " ➔";
-  }
+#label-left::after {
+  content: " ➔";
+}
+ 
   /* Surbrillance */
   .mapboxgl-compare .mapboxgl-map canvas {
     transition: opacity 0.3s ease;
@@ -454,6 +472,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
 
