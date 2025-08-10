@@ -388,19 +388,20 @@ toggleStatsBtn.onclick = () => {
     toggleStatsBtn.textContent = 'Masquer stats';
 
     // Forcer slider complètement à droite (valeur 1)
-    compare.setSlider(1); 
+    compare.setSlider(0); 
 
   } else {
     statsDiv.style.display = 'none';
     toggleStatsBtn.textContent = 'Afficher stats';
 
     // Remettre slider au centre (valeur 0.5)
-    compare.setSlider(0.5);
+    compare.setSlider(1);
   }
 };
 </script>
 
 </body>
 </html>
+
 
 
