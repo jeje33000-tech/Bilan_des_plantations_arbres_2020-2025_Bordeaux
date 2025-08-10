@@ -114,6 +114,10 @@
   .mapboxgl-compare .mapboxgl-map canvas {
     transition: opacity 0.3s ease;
   }
+  /* Supprimer ascenseurs (scrollbars) */
+  #container, #before, #after {
+    overflow: hidden !important;
+  }
 </style>
 </head>
 <body>
@@ -429,4 +433,5 @@ btnToggleStats.addEventListener('click', toggleSlider);
 
 </body>
 </html>
+
 
