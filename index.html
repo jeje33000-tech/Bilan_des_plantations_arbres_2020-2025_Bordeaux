@@ -24,7 +24,17 @@
     z-index: 1500;
     user-select: none;
   }
-
+  /* Container cartes sous la banière */
+  #container {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 50px); /* sous la banière */
+    top: 50px;
+  }
+  #before, #after {
+    position: absolute;
+    top: 0; bottom: 0; width: 100%;
+  }
   /* Légende */
   .legend {
     position: absolute;
@@ -433,5 +443,6 @@ btnToggleStats.addEventListener('click', toggleSlider);
 
 </body>
 </html>
+
 
 
