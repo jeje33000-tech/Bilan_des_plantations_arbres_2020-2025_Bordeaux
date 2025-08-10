@@ -378,22 +378,27 @@ beforeMap.on('move', updateStats);
 // --- Bouton Afficher/Masquer stats ---
 const toggleStatsBtn = document.getElementById('toggle-stats');
 const statsDiv = document.getElementById('stats');
+const sliderElem = document.querySelector('.mapbox-gl-compare__slider');
 
 toggleStatsBtn.onclick = () => {
-  // Utiliser getComputedStyle pour lire l'affichage réel
   const statsVisible = window.getComputedStyle(statsDiv).display !== 'none';
 
   if (!statsVisible) {
     statsDiv.style.display = 'block';
     toggleStatsBtn.textContent = 'Masquer stats';
-    compare.setSlider(1);  // Pousse la barre complètement à droite (voir avantMap à droite)
+    // Forcer slider complètement à droite (100%)
+    sliderElem.style.left = 'calc(100% - 10px)';  // 10px largeur slider approx
+    compare._onSlide(); // force le recalcul interne (fonction privée)
   } else {
     statsDiv.style.display = 'none';
     toggleStatsBtn.textContent = 'Afficher stats';
-    compare.setSlider(0.5); // Remet la barre au centre
+    // Remettre slider au centre (50%)
+    sliderElem.style.left = 'calc(50% - 10px)';
+    compare._onSlide();
   }
 };
 </script>
 
 </body>
 </html>
+
