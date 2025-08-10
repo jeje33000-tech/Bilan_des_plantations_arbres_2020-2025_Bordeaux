@@ -7,27 +7,28 @@
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
 <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" rel="stylesheet" />
 <style>
-  body,html { margin:0; padding:0; height:100%; }
-  #container { position:relative; width:100%; height:100vh; }
-  #after, #before { position:absolute; top:0; bottom:0; width:100%; }
-  /* ordre des div dans le DOM : #after puis #before */
-  /* on force before à droite, after à gauche */
-  #after {
-    left: 0;
-    right: auto;
-  }
-  #before {
-    left: auto;
-    right: 0;
-  }
-  .legend {
+  body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
+  #btnToggleStats {
     position: absolute;
     top: 10px;
+    left: 10px;
+    z-index: 1100;
+    padding: 8px 12px;
+    background: #0074D9;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #container { position:relative; width:100%; height:100vh; }
+  #before, #after { position:absolute; top:0; bottom:0; width:100%; }
+  .legend {
+    position: absolute;
+    top: 50px;
     left: 10px;
     background: rgba(255,255,255,0.9);
     padding: 6px 12px;
     border-radius: 5px;
-    font-family: Arial, sans-serif;
     font-size: 12px;
     z-index: 1000;
     max-width: 280px;
@@ -62,7 +63,6 @@
     background: rgba(255,255,255,0.85);
     border-radius: 3px;
     pointer-events: none;
-    font-family: Arial, sans-serif;
     white-space: nowrap;
     z-index: 1000;
     transition: opacity 0.3s ease;
@@ -87,21 +87,13 @@
     padding: 10px;
     font-family: Arial, sans-serif;
     z-index: 1000;
-    display: none; /* caché au départ */
-  }
-  #toggle-stats {
-    position: absolute;
-    bottom: 200px;
-    right: 10px;
-    z-index: 1100;
-    padding: 6px 12px;
-    font-size: 14px;
-    font-family: Arial, sans-serif;
-    cursor: pointer;
+    display: none; /* caché par défaut */
   }
 </style>
 </head>
 <body>
+
+<button id="btnToggleStats">Afficher Stat</button>
 
 <div id="container">
   <div id="after"></div> <!-- inversé: after à gauche -->
@@ -112,8 +104,6 @@
 <div id="label-right">Avant 2020</div>
 
 <div id="legend" class="legend"></div>
-
-<button id="toggle-stats">Afficher stats</button>
 <div id="stats"><canvas id="chart"></canvas></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
@@ -375,44 +365,28 @@ function updateStats() {
 afterMap.on('move', updateStats);
 beforeMap.on('move', updateStats);
 
-// --- Bouton Afficher/Masquer stats ---
-const toggleStatsBtn = document.getElementById('toggle-stats');
+// --- AJOUT du bouton toggle pour slider et stats ---
+const container = document.getElementById('container');
 const statsDiv = document.getElementById('stats');
+const btnToggleStats = document.getElementById('btnToggleStats');
 
-let statsShown = false;
+const sliderPositions = [container.offsetWidth, container.offsetWidth / 2]; // droite et milieu
+let currentPosIndex = 1; // commencer au milieu
 
-toggleStatsBtn.onclick = () => {
-  statsShown = !statsShown;
-  if (statsShown) {
+function toggleSlider() {
+  currentPosIndex = 1 - currentPosIndex; // alterne entre 0 et 1
+  compare.setSlider(sliderPositions[currentPosIndex]);
+  if (currentPosIndex === 0) {
     statsDiv.style.display = 'block';
-    toggleStatsBtn.textContent = 'Masquer stats';
-
-    // Forcer slider complètement à droite (valeur 1)
-    compare.setSlider(2000); 
-
+    btnToggleStats.textContent = 'Masquer Stat';
   } else {
     statsDiv.style.display = 'none';
-    toggleStatsBtn.textContent = 'Afficher stats';
-
-    // Remettre slider au centre (valeur 0.5)
-    compare.setSlider(0.5);
+    btnToggleStats.textContent = 'Afficher Stat';
   }
-};
+}
+
+btnToggleStats.addEventListener('click', toggleSlider);
 </script>
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
