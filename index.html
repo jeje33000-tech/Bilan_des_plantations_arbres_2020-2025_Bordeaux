@@ -100,7 +100,7 @@
   /* Labels en bas */
   #label-left, #label-right {
     position: absolute;
-    bottom: 40px;
+    bottom: 80px;
     padding: 5px 12px;
     font-size: 14px;
     font-weight: bold;
@@ -108,8 +108,10 @@
     border-radius: 3px;
     pointer-events: none;
     white-space: nowrap;
-    z-index: 1100;
+    z-index: 3000;
     transition: opacity 0.3s ease;
+    display: block !important;
+  visibility: visible !important;
   }
   #label-left {
     left: 10px;
@@ -140,7 +142,10 @@
 <div class="legend" id="legend"></div>
 <button id="btnToggleStats">Afficher stat mandat visibles sur la carte</button>
 
-<div id="stats"><canvas id="chart"></canvas></div>
+<div id="stats">
+  <h3 style="margin:0 0 8px 0; font-size: 16px; font-weight: bold;">Répartition des stations visibles</h3>
+  <canvas id="chart"></canvas>
+</div>
 
 <div id="label-left">Après 2020</div>
 <div id="label-right">Avant 2020</div>
@@ -449,6 +454,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
 
