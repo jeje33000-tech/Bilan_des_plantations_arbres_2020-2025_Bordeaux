@@ -2,30 +2,46 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<title>Swipe Avant/Après avec surbrillance locale</title>
+<title>Swipe Avant/Après corrigé</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
 <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" rel="stylesheet" />
 <style>
-  body, html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
+  body,html { margin:0; padding:0; height:100%; }
   #container { position:relative; width:100%; height:100vh; }
   #before, #after { position:absolute; top:0; bottom:0; width:100%; }
-  #legend {
+  .legend {
     position: absolute;
     top: 10px;
     left: 10px;
-    max-width: 280px;
     background: rgba(255,255,255,0.9);
     padding: 6px 12px;
     border-radius: 5px;
+    font-family: Arial, sans-serif;
     font-size: 12px;
     z-index: 1000;
-    pointer-events: none;
+    max-width: 280px;
   }
-  #legend h4 {
+  .legend h4 {
     margin: 6px 0 4px;
-    font-weight: bold;
     font-size: 13px;
+  }
+  .legend div {
+    display: flex;
+    align-items: center;
+    margin: 2px 0;
+  }
+  .legend span.color-box {
+    width: 18px;
+    height: 14px;
+    margin-right: 6px;
+    border: 1px solid #555;
+    flex-shrink: 0;
+  }
+  .legend span.count {
+    margin-left: auto;
+    font-weight: bold;
+    color: #333;
   }
   #label-left, #label-right {
     position: absolute;
@@ -36,6 +52,7 @@
     background: rgba(255,255,255,0.85);
     border-radius: 3px;
     pointer-events: none;
+    font-family: Arial, sans-serif;
     white-space: nowrap;
     z-index: 1000;
     transition: opacity 0.3s ease;
@@ -43,8 +60,12 @@
   #label-right::after {
     content: " ➔";
   }
-  #label-left { left: 10px; }
-  #label-right { right: 10px; }
+  #label-left {
+    left: 10px;
+  }
+  #label-right {
+    right: 10px;
+  }
   #stats {
     position: absolute;
     bottom: 10px;
@@ -54,49 +75,45 @@
     background: rgba(255,255,255,0.9);
     border-radius: 5px;
     padding: 10px;
-    font-size: 12px;
+    font-family: Arial, sans-serif;
     z-index: 1000;
-    box-sizing: border-box;
   }
-  #toggle-stats-btn {
+  /* Nouveau style pour le bouton */
+  #toggleStatsBtn {
     position: absolute;
-    top: 10px;
+    bottom: 200px;
     right: 10px;
     z-index: 1100;
+    padding: 8px 14px;
     background: #0074D9;
     color: white;
     border: none;
-    padding: 8px 14px;
     border-radius: 4px;
-    cursor: pointer;
     font-weight: bold;
-    font-size: 13px;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+  }
+  #toggleStatsBtn:hover {
+    background: #005fa3;
   }
 </style>
 </head>
 <body>
 
 <div id="container">
-  <div id="after"></div> <!-- after à gauche -->
+  <div id="after"></div> <!-- inversé: after à gauche -->
   <div id="before"></div> <!-- before à droite -->
 </div>
 
 <div id="label-left">Après 2020</div>
 <div id="label-right">Avant 2020</div>
 
-<div id="legend">
-  <h4>Légende</h4>
-  <div><span style="background:#FF4500;width:18px;height:14px;display:inline-block;margin-right:6px;border:1px solid #555;"></span> Stations créées ou en cours</div>
-  <div><span style="background:orange;width:18px;height:14px;display:inline-block;margin-right:6px;border:1px solid #555;"></span> Stations remplacées/densifiées</div>
-  <div><span style="background:green;width:18px;height:14px;display:inline-block;margin-right:6px;border:1px solid #555;"></span> Stations non plantées</div>
-  <div style="margin-top:8px;"><span style="background:green;width:18px;height:14px;display:inline-block;margin-right:6px;border:1px solid #555;"></span> Stations avant 2020</div>
-</div>
+<div id="legend" class="legend"></div>
 
-<button id="toggle-stats-btn">Afficher stats</button>
+<!-- Bouton pour afficher/masquer stats -->
+<button id="toggleStatsBtn">Afficher stats</button>
 
-<div id="stats" style="display:none;">
-  <canvas id="chart"></canvas>
-</div>
+<div id="stats" style="display:none;"><canvas id="chart"></canvas></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
@@ -107,78 +124,29 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiamVqZTMzMDAwIiwiYSI6ImNtZTJ2c3RnaDAwczEyanF6b
 
 const centerBordeaux = [-0.57409, 44.861022];
 
+// on inverse ici les conteneurs: "after" à gauche, "before" à droite
 const afterMap = new mapboxgl.Map({
   container: 'after',
   style: 'mapbox://styles/mapbox/dark-v11',
   center: centerBordeaux,
-  zoom: 11.5,
-  attributionControl: false
+  zoom: 11.5
 });
 const beforeMap = new mapboxgl.Map({
   container: 'before',
   style: 'mapbox://styles/mapbox/dark-v11',
   center: centerBordeaux,
-  zoom: 11.5,
-  attributionControl: false
+  zoom: 11.5
 });
 
-// Ajouter controls communs
-[afterMap, beforeMap].forEach(m => {
-  m.addControl(new mapboxgl.NavigationControl());
-  m.addControl(new mapboxgl.GeolocateControl({trackUserLocation: true}));
-  m.addControl(new mapboxgl.FullscreenControl());
-  m.addControl(new mapboxgl.ScaleControl({unit: 'metric'}));
-});
-
-// Barre de recherche simple (par CODE_STATION)
-function addSearchControl(map) {
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.placeholder = 'Rechercher CODE_STATION';
-  input.style.position = 'absolute';
-  input.style.top = '10px';
-  input.style.left = '50%';
-  input.style.transform = 'translateX(-50%)';
-  input.style.zIndex = 1500;
-  input.style.padding = '4px 8px';
-  input.style.fontSize = '12px';
-  input.style.borderRadius = '3px';
-  input.style.border = '1px solid #aaa';
-  input.style.background = 'white';
-  map.getContainer().appendChild(input);
-
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      const val = input.value.trim().toUpperCase();
-      if (!val) return;
-      // Recherche dans toutes couches de cette map
-      let found = false;
-      [beforeMap, afterMap].forEach(mp => {
-        mp.getStyle().sources && Object.keys(mp.getStyle().sources).forEach(sourceId => {
-          const source = mp.getSource(sourceId);
-          if (!source || !source._data) return;
-          const feat = source._data.features.find(f => f.properties.CODE_STATION && f.properties.CODE_STATION.toUpperCase() === val);
-          if (feat) {
-            mp.flyTo({center: feat.geometry.coordinates, zoom: 16});
-            found = true;
-          }
-        });
-      });
-      if (!found) alert('CODE_STATION introuvable');
-    }
-  });
-}
-
-addSearchControl(afterMap);
-addSearchControl(beforeMap);
-
-// Inverser les cartes dans Compare
+// On inverse l'ordre des maps dans compare pour correspondre au conteneur
 const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {});
 
+// Couches avant (sur beforeMap)
 const layersAvant = [
   { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2020', data: null, totalCount: 0, visibleCount: 0 }
 ];
 
+// Couches après (sur afterMap)
 const layersApres = [
   { map: afterMap, id: 'apres1-layer', source: 'apres1', color: '#FF4500', label: 'Stations créées ou en cours', data: null, totalCount: 0, visibleCount: 0 },
   { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Stations remplacées/densifiées', data: null, totalCount: 0, visibleCount: 0 },
@@ -210,6 +178,7 @@ async function addLayer(info) {
       }
     });
 
+    // Surbrillance pour afterMap
     if (info.map === afterMap) {
       info.map.addLayer({
         id: info.id + '-highlight',
@@ -219,7 +188,7 @@ async function addLayer(info) {
           'fill-color': '#ffff00',
           'fill-opacity': 0.3
         },
-        filter: ['==', 'fid', ''] // filtre vide initial
+        filter: ['==', 'fid', ''] // filtre vide par défaut
       });
     }
 
@@ -231,6 +200,7 @@ async function addLayer(info) {
         'text-field': ['get', 'CODE_STATION'],
         'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
         'text-size': 11,
+        'text-offset': [0, 0],
         'text-anchor': 'center',
         'visibility': 'none'
       },
@@ -249,31 +219,28 @@ async function addLayer(info) {
       }
     });
 
-    if (info.map === afterMap) {
-      info.map.on('click', info.id, (e) => {
-        if (!e.features.length) return;
-        const feature = e.features[0];
-        const coordinates = e.lngLat;
-        const codeStation = feature.properties.CODE_STATION || 'N/A';
+    // Interaction popup clic
+    info.map.on('click', info.id, (e) => {
+      if (!e.features.length) return;
+      const feature = e.features[0];
+      const coordinates = e.lngLat;
+      const codeStation = feature.properties.CODE_STATION || 'N/A';
 
-        if (popup) popup.remove();
+      if (popup) popup.remove();
 
-        popup = new mapboxgl.Popup()
-          .setLngLat(coordinates)
-          .setHTML(`<strong>Code station:</strong> ${codeStation}`)
-          .addTo(info.map);
+      popup = new mapboxgl.Popup()
+        .setLngLat(coordinates)
+        .setHTML(`<strong>Code station:</strong> ${codeStation}`)
+        .addTo(info.map);
+    });
 
-        // Mettre à jour filtre sur la couche highlight
-        info.map.setFilter(info.id + '-highlight', ['==', 'fid', feature.properties.fid]);
-      });
-
-      info.map.on('mouseenter', info.id, () => {
-        info.map.getCanvas().style.cursor = 'pointer';
-      });
-      info.map.on('mouseleave', info.id, () => {
-        info.map.getCanvas().style.cursor = '';
-      });
-    }
+    // Curseur pointer
+    info.map.on('mouseenter', info.id, () => {
+      info.map.getCanvas().style.cursor = 'pointer';
+    });
+    info.map.on('mouseleave', info.id, () => {
+      info.map.getCanvas().style.cursor = '';
+    });
 
   } catch (err) {
     console.error('Erreur chargement couche ' + info.source, err);
@@ -290,9 +257,12 @@ loadAllLayers().then(() => {
   updateStats();
 });
 
+const labelLeft = document.getElementById('label-left');
+const labelRight = document.getElementById('label-right');
+
 function updateLabels(sliderPos) {
-  document.getElementById('label-left').style.opacity = sliderPos;
-  document.getElementById('label-right').style.opacity = 1 - sliderPos;
+  labelLeft.style.opacity = sliderPos;
+  labelRight.style.opacity = 1 - sliderPos;
 }
 
 compare.on('slide', e => {
@@ -301,6 +271,7 @@ compare.on('slide', e => {
 });
 updateLabels(0);
 
+// Compter stations visibles dans la vue
 function countVisibleStations(layerInfo) {
   if (!layerInfo.data) return 0;
   const bounds = layerInfo.map.getBounds();
@@ -316,6 +287,48 @@ function countVisibleStations(layerInfo) {
     }
     return coord ? bounds.contains(coord) : false;
   }).length;
+}
+
+// Mise à jour légende (total seulement)
+function createLegend() {
+  const legendDiv = document.getElementById('legend');
+  legendDiv.innerHTML = '';
+
+  const avantTitle = document.createElement('h4');
+  avantTitle.textContent = 'Avant 2020';
+  legendDiv.appendChild(avantTitle);
+  layersAvant.forEach(l => {
+    if(!l.data) return;
+    const item = document.createElement('div');
+    const colorBox = document.createElement('span');
+    colorBox.className = 'color-box';
+    colorBox.style.backgroundColor = l.color;
+    item.appendChild(colorBox);
+    item.appendChild(document.createTextNode(`${l.label} (total)`));
+    const countSpan = document.createElement('span');
+    countSpan.className = 'count';
+    countSpan.textContent = `${l.totalCount}`;
+    item.appendChild(countSpan);
+    legendDiv.appendChild(item);
+  });
+
+  const apresTitle = document.createElement('h4');
+  apresTitle.textContent = 'Après 2020';
+  legendDiv.appendChild(apresTitle);
+  layersApres.forEach(l => {
+    if(!l.data) return;
+    const item = document.createElement('div');
+    const colorBox = document.createElement('span');
+    colorBox.className = 'color-box';
+    colorBox.style.backgroundColor = l.color;
+    item.appendChild(colorBox);
+    item.appendChild(document.createTextNode(`${l.label} (total)`));
+    const countSpan = document.createElement('span');
+    countSpan.className = 'count';
+    countSpan.textContent = `${l.totalCount}`;
+    item.appendChild(countSpan);
+    legendDiv.appendChild(item);
+  });
 }
 
 const ctx = document.getElementById('chart').getContext('2d');
@@ -342,6 +355,7 @@ const chart = new Chart(ctx, {
   }
 });
 
+// Mise à jour stats : uniquement couches après 2020
 function updateStats() {
   layersApres.forEach(l => {
     l.visibleCount = countVisibleStations(l);
@@ -353,21 +367,26 @@ function updateStats() {
   chart.data.datasets[0].data = allLayers.map(l => l.visibleCount);
   chart.data.datasets[0].backgroundColor = allLayers.map(l => l.color);
   chart.update();
+
+  createLegend();
 }
 
 afterMap.on('move', updateStats);
 beforeMap.on('move', updateStats);
 
-// Bouton toggle stats
-const toggleStatsBtn = document.getElementById('toggle-stats-btn');
+// --- AJOUT DU BOUTON --- //
+const toggleStatsBtn = document.getElementById('toggleStatsBtn');
 const statsDiv = document.getElementById('stats');
+
 toggleStatsBtn.onclick = () => {
   if (statsDiv.style.display === 'none') {
     statsDiv.style.display = 'block';
     toggleStatsBtn.textContent = 'Masquer stats';
+    compare.setSlider(1.0); // pousse le curseur à droite
   } else {
     statsDiv.style.display = 'none';
     toggleStatsBtn.textContent = 'Afficher stats';
+    compare.setSlider(0.5); // repositionne au milieu (tu peux changer cette valeur)
   }
 };
 </script>
