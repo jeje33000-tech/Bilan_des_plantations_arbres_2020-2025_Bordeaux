@@ -378,16 +378,17 @@ toggleStatsBtn.onclick = () => {
   if (statsDiv.style.display === 'none') {
     statsDiv.style.display = 'block';
     toggleStatsBtn.textContent = 'Masquer stats';
-    compare.setSlider(-1);  // Pousse le curseur à droite (before à droite)
+    compare.setSlider(2);  // Pousse le curseur à droite (before à droite)
   } else {
     statsDiv.style.display = 'none';
     toggleStatsBtn.textContent = 'Afficher stats';
-    compare.setSlider(0.5); // Retour milieu
+    compare.setSlider(1); // Retour milieu
   }
 };
 </script>
 
 </body>
 </html>
+
 
 
