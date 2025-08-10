@@ -4,11 +4,12 @@
 <meta charset="UTF-8" />
 <title>Swipe Avant/Après corrigé</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- Mapbox CSS -->
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
 <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" rel="stylesheet" />
 <style>
-  body,html {
-    margin:0; padding:0; height:100%; overflow: hidden; /* Supprime scrollbars */
+  html, body {
+    margin: 0; padding: 0; height: 100%; overflow: hidden; /* supprimer scrollbars */
     font-family: Arial, sans-serif;
   }
   #header {
@@ -24,22 +25,30 @@
   }
   #container {
     position: absolute;
-    top: 48px; /* hauteur header + petit espace */
+    top: 48px; /* hauteur header */
     bottom: 0; left: 0; right: 0;
+    overflow: hidden;
   }
   #before, #after {
-    position: absolute; top:0; bottom:0; width: 100%;
+    position: absolute;
+    top: 0; bottom: 0; width: 100%;
   }
   .legend {
     position: absolute;
     top: 10px;
     left: 10px;
-    background: rgba(255,255,255,0.9);
-    padding: 6px 12px;
+    background: rgba(255,255,255,0.95);
+    padding: 8px 12px;
     border-radius: 5px;
-    font-size: 12px;
-    z-index: 1000;
+    font-size: 13px;
     max-width: 280px;
+    z-index: 1100;
+  }
+  .legend h4 {
+    margin: 0 0 6px 0;
+    font-weight: bold;
+    font-size: 14px;
+    color: #222;
   }
   .legend div {
     display: flex;
@@ -49,7 +58,7 @@
   .legend span.color-box {
     width: 18px;
     height: 14px;
-    margin-right: 6px;
+    margin-right: 8px;
     border: 1px solid #555;
     flex-shrink: 0;
   }
@@ -58,28 +67,18 @@
     font-weight: bold;
     color: #333;
   }
-  #label-left, #label-right {
+  #btnToggleStats {
     position: absolute;
-    bottom: 30px;
-    padding: 5px 12px;
-    font-size: 14px;
-    font-weight: bold;
-    background: rgba(255,255,255,0.85);
-    border-radius: 3px;
-    pointer-events: none;
-    white-space: nowrap;
-    z-index: 1000;
-    transition: opacity 0.3s ease;
-    font-family: Arial, sans-serif;
-  }
-  #label-right::after {
-    content: " ➔";
-  }
-  #label-left {
+    top: 110px; /* sous la légende */
     left: 10px;
-  }
-  #label-right {
-    right: 10px;
+    max-width: 280px;
+    padding: 6px 10px;
+    font-size: 13px;
+    border-radius: 4px;
+    border: 1px solid #555;
+    background-color: white;
+    cursor: pointer;
+    z-index: 1100;
   }
   #stats {
     position: absolute;
@@ -87,11 +86,12 @@
     left: 10px;
     width: 280px;
     height: 180px;
-    background: rgba(255,255,255,0.9);
+    background: rgba(255,255,255,0.95);
     border-radius: 5px;
     padding: 10px;
     font-family: Arial, sans-serif;
-    z-index: 1000;
+    z-index: 1100;
+    display: none;
   }
   #stats h4 {
     margin: 0 0 8px 0;
@@ -99,22 +99,31 @@
     font-weight: bold;
     text-align: center;
   }
-  #btnToggleStats {
-    display: block;
-    margin: 8px auto 0 auto;
-    padding: 6px 10px;
-    font-size: 12px;
-    border-radius: 4px;
-    border: 1px solid #555;
-    background-color: white;
-    cursor: pointer;
-    max-width: 280px;
-    z-index: 1000;
+  #label-left, #label-right {
     position: absolute;
-    top: calc(10px + 110px); /* sous la légende */
+    bottom: 35px;
+    padding: 6px 12px;
+    font-size: 14px;
+    font-weight: bold;
+    background: rgba(255,255,255,0.85);
+    border-radius: 3px;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 1000;
+    font-family: Arial, sans-serif;
+    user-select: none;
+  }
+  #label-left::after {
+    content: " ➔";
+  }
+  #label-left {
     left: 10px;
   }
-  /* Supprimer ascenseurs */
+  #label-right {
+    right: 10px;
+    bottom: 35px;
+  }
+  /* Supprimer ascenseurs internes */
   #container > div {
     overflow: hidden !important;
   }
@@ -125,31 +134,35 @@
 <div id="header">Bilan des stations plantées pendant le mandat</div>
 
 <div id="container">
-  <div id="after"></div> <!-- inversé: after à gauche -->
-  <div id="before"></div> <!-- before à droite -->
+  <div id="after"></div> <!-- After carte à gauche -->
+  <div id="before"></div> <!-- Before carte à droite -->
 </div>
 
-<div id="label-left">Après 2020 ➔</div>
+<div id="label-left">Après 2020</div>
 <div id="label-right">Avant 2020</div>
 
-<div id="legend" class="legend"></div>
+<div class="legend" id="legend"></div>
+
 <button id="btnToggleStats">Afficher stat mandat visibles sur la carte</button>
 
-<div id="stats" style="display:none;">
+<div id="stats">
   <h4>Répartition des stations visibles</h4>
   <canvas id="chart"></canvas>
 </div>
 
+<!-- Scripts Mapbox, Compare et Chart.js -->
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 
 <script>
 mapboxgl.accessToken = 'pk.eyJ1IjoiamVqZTMzMDAwIiwiYSI6ImNtZTJ2c3RnaDAwczEyanF6bW9wODI0cTgifQ.AYOAKWDyDLP_fbKIz-QdwQ';
 
+// Coordonnées centre
 const centerBordeaux = [-0.57409, 44.861022];
 
-// Inversion conteneurs: after à gauche, before à droite
+// Crée cartes: after à gauche, before à droite (swipe fonctionne mieux ainsi)
 const afterMap = new mapboxgl.Map({
   container: 'after',
   style: 'mapbox://styles/mapbox/dark-v11',
@@ -163,9 +176,20 @@ const beforeMap = new mapboxgl.Map({
   zoom: 11.5
 });
 
-const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {});
+// Compare swipe
+const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {
+  // Set initial slider to middle
+  initialPosition: 0.5,
+  // Show arrows
+  showLabels: true,
+  // Custom labels
+  label: {
+    before: 'Avant',
+    after: 'Après'
+  }
+});
 
-// Couches
+// Couches info
 const layersAvant = [
   { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2020', data: null, totalCount: 0, visibleCount: 0 }
 ];
@@ -175,8 +199,10 @@ const layersApres = [
   { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'green', label: 'Stations non plantées', data: null, totalCount: 0, visibleCount: 0 }
 ];
 
+// Popup global
 let popup = null;
 
+// Fonction chargement couche
 async function addLayer(info) {
   try {
     const response = await fetch(info.source + '.geojson');
@@ -190,6 +216,7 @@ async function addLayer(info) {
       data: geojson
     });
 
+    // Couche principale
     info.map.addLayer({
       id: info.id,
       type: 'fill',
@@ -200,7 +227,7 @@ async function addLayer(info) {
       }
     });
 
-    // Surbrillance pour afterMap
+    // Surbrillance au survol pour couches "after"
     if (info.map === afterMap) {
       info.map.addLayer({
         id: info.id + '-highlight',
@@ -210,38 +237,11 @@ async function addLayer(info) {
           'fill-color': '#ffff00',
           'fill-opacity': 0.3
         },
-        filter: ['==', 'fid', ''] // filtre vide par défaut
+        filter: ['==', 'fid', ''] // filtre vide au départ
       });
     }
 
-    info.map.addLayer({
-      id: info.id + '-label',
-      type: 'symbol',
-      source: info.source,
-      layout: {
-        'text-field': ['get', 'CODE_STATION'],
-        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-        'text-size': 11,
-        'text-offset': [0, 0],
-        'text-anchor': 'center',
-        'visibility': 'none'
-      },
-      paint: {
-        'text-color': info.color,
-        'text-halo-color': '#000',
-        'text-halo-width': 1
-      }
-    });
-
-    info.map.on('zoom', () => {
-      const zoom = info.map.getZoom();
-      const visibility = zoom >= 15 ? 'visible' : 'none';
-      if (info.map.getLayoutProperty(info.id + '-label', 'visibility') !== visibility) {
-        info.map.setLayoutProperty(info.id + '-label', 'visibility', visibility);
-      }
-    });
-
-    // Interaction popup clic
+    // Popup au clic
     info.map.on('click', info.id, (e) => {
       if (!e.features.length) return;
       const feature = e.features[0];
@@ -249,53 +249,65 @@ async function addLayer(info) {
       const codeStation = feature.properties.CODE_STATION || 'N/A';
 
       if (popup) popup.remove();
-
       popup = new mapboxgl.Popup()
         .setLngLat(coordinates)
         .setHTML(`<strong>Code station:</strong> ${codeStation}`)
         .addTo(info.map);
     });
 
-    // Curseur pointer
+    // Curseur pointer sur zones cliquables
     info.map.on('mouseenter', info.id, () => {
       info.map.getCanvas().style.cursor = 'pointer';
     });
     info.map.on('mouseleave', info.id, () => {
       info.map.getCanvas().style.cursor = '';
+      if (info.map.getLayer(info.id + '-highlight')) {
+        info.map.setFilter(info.id + '-highlight', ['==', 'fid', '']);
+      }
     });
 
+    // Surbrillance au survol (yellow)
+    if (info.map === afterMap) {
+      info.map.on('mousemove', info.id, (e) => {
+        if (!e.features.length) return;
+        const fid = e.features[0].id || e.features[0].properties.fid || '';
+        info.map.setFilter(info.id + '-highlight', ['==', ['id'], fid]);
+      });
+    }
   } catch (err) {
     console.error('Erreur chargement couche ' + info.source, err);
   }
 }
 
+// Chargement de toutes les couches
 async function loadAllLayers() {
   for (const layer of [...layersAvant, ...layersApres]) {
     await addLayer(layer);
   }
 }
 
+// Charger les couches
 loadAllLayers().then(() => {
   updateStats();
   createLegend();
 });
 
-// Labels opacité
+// Labels pour opacité (pour fade)
 const labelLeft = document.getElementById('label-left');
 const labelRight = document.getElementById('label-right');
 
-function updateLabels(sliderPos) {
-  labelLeft.style.opacity = sliderPos;
-  labelRight.style.opacity = 1 - sliderPos;
+function updateLabels(pos) {
+  labelLeft.style.opacity = pos;
+  labelRight.style.opacity = 1 - pos;
 }
 
+// Mettre à jour les labels au swipe
 compare.on('slide', e => {
   updateLabels(e.detail);
   updateStats();
 });
-updateLabels(0);
 
-// Compter stations visibles
+// Compter stations visibles dans la vue actuelle
 function countVisibleStations(layerInfo) {
   if (!layerInfo.data) return 0;
   const bounds = layerInfo.map.getBounds();
@@ -313,7 +325,7 @@ function countVisibleStations(layerInfo) {
   }).length;
 }
 
-// Légende (total seulement)
+// Créer la légende avec total (sans mise à jour dynamique pour visible)
 function createLegend() {
   const legendDiv = document.getElementById('legend');
   legendDiv.innerHTML = '';
@@ -331,13 +343,14 @@ function createLegend() {
     item.appendChild(document.createTextNode(`${l.label} (total)`));
     const countSpan = document.createElement('span');
     countSpan.className = 'count';
-    countSpan.textContent = `${l.totalCount}`;
+    countSpan.textContent = l.totalCount;
     item.appendChild(countSpan);
     legendDiv.appendChild(item);
   });
 
   const apresTitle = document.createElement('h4');
   apresTitle.textContent = 'Après 2020';
+  apresTitle.style.marginTop = '10px';
   legendDiv.appendChild(apresTitle);
   layersApres.forEach(l => {
     if(!l.data) return;
@@ -346,94 +359,110 @@ function createLegend() {
     colorBox.className = 'color-box';
     colorBox.style.backgroundColor = l.color;
     item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(`${l.label} (total)`));
+    item.appendChild(document.createTextNode(l.label));
     const countSpan = document.createElement('span');
     countSpan.className = 'count';
-    countSpan.textContent = `${l.totalCount}`;
+    countSpan.textContent = l.totalCount;
     item.appendChild(countSpan);
     legendDiv.appendChild(item);
   });
 }
 
-// Chart.js setup avec valeurs au-dessus des barres
-const ctx = document.getElementById('chart').getContext('2d');
+// Afficher ou cacher stats
+const btnToggle = document.getElementById('btnToggleStats');
+const statsDiv = document.getElementById('stats');
+let chart = null;
 
-const chart = new Chart(ctx, {
-  type: 'bar',
-  data: {
-    labels: [],
-    datasets: [{
-      label: 'Nombre stations visibles',
-      data: [],
-      backgroundColor: []
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: { beginAtZero: true }
-    },
-    plugins: {
-      legend: { display: false },
-      datalabels: {
-        anchor: 'end',
-        align: 'end',
-        color: '#000',
-        font: { weight: 'bold' }
-      }
-    }
-  },
-  plugins: [ChartDataLabels]
-});
+btnToggle.onclick = () => {
+  if (statsDiv.style.display === 'none' || statsDiv.style.display === '') {
+    updateStats();
+    statsDiv.style.display = 'block';
+    btnToggle.textContent = 'Masquer stat mandat visibles sur la carte';
+  } else {
+    statsDiv.style.display = 'none';
+    btnToggle.textContent = 'Afficher stat mandat visibles sur la carte';
+  }
+};
 
-// Mise à jour stats : uniquement couches après 2020
+// Met à jour les stats visibles (après calcul)
 function updateStats() {
-  layersApres.forEach(l => {
+  if (!chart) return;
+
+  const statsData = [...layersAvant, ...layersApres].map(l => {
     l.visibleCount = countVisibleStations(l);
+    return { label: l.label, count: l.visibleCount, color: l.color };
   });
 
-  const allLayers = layersApres;
-
-  chart.data.labels = allLayers.map(l => l.label);
-  chart.data.datasets[0].data = allLayers.map(l => l.visibleCount);
-  chart.data.datasets[0].backgroundColor = allLayers.map(l => l.color);
+  chart.data.labels = statsData.map(d => d.label);
+  chart.data.datasets[0].data = statsData.map(d => d.count);
+  chart.data.datasets[0].backgroundColor = statsData.map(d => d.color);
   chart.update();
-
-  createLegend();
 }
 
-afterMap.on('move', updateStats);
-beforeMap.on('move', updateStats);
+// Initialiser Chart.js barre verticale
+function initChart() {
+  const ctx = document.getElementById('chart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Nombre stations visibles',
+        data: [],
+        backgroundColor: [],
+        borderRadius: 6,
+        maxBarThickness: 36,
+      }]
+    },
+    options: {
+      animation: { duration: 300 },
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          anchor: 'end',
+          align: 'end',
+          color: '#222',
+          font: { weight: 'bold', size: 12 },
+          formatter: (value) => value > 0 ? value : '',
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 }
+        }
+      },
+      responsive: true,
+      maintainAspectRatio: false,
+    },
+    plugins: [ChartDataLabels]
+  });
+}
 
-// Bouton afficher/masquer stats + déplacer curseur
-const btnToggleStats = document.getElementById('btnToggleStats');
-const statsDiv = document.getElementById('stats');
-let statsVisible = false;
+// Démarrer chart
+initChart();
 
-btnToggleStats.addEventListener('click', () => {
-  statsVisible = !statsVisible;
-  statsDiv.style.display = statsVisible ? 'block' : 'none';
-  btnToggleStats.textContent = statsVisible ? 'Masquer stat' : 'Afficher stat mandat visibles sur la carte';
-
-  if (statsVisible) {
-    // Curseur complètement à droite (1)
-    compare.setSlider(1);
-  } else {
-    // Curseur au milieu (0.5)
-    compare.setSlider(0.5);
-  }
-  updateLabels(statsVisible ? 1 : 0.5);
-  updateStats();
+// Ajouter contrôles zoom et nord sur les deux cartes
+[beforeMap, afterMap].forEach(m => {
+  m.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+  m.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+  m.addControl(new mapboxgl.NorthStarControl(), 'top-right');
 });
 
-// Ajouter contrôles zoom et rose des vents au afterMap (à droite)
-// On place controls sur afterMap (à gauche) pour que ce soit en haut à droite globale
-afterMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
-
+// Event synchronisation: lien déplacement cartes
+function syncMaps(m1, m2) {
+  let isSyncing = false;
+  m1.on('move', () => {
+    if (isSyncing) return;
+    isSyncing = true;
+    const center = m1.getCenter();
+    const zoom = m1.getZoom();
+    m2.jumpTo({ center: center, zoom: zoom });
+    isSyncing = false;
+  });
+}
+syncMaps(afterMap, beforeMap);
+syncMaps(beforeMap, afterMap);
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-
 </body>
 </html>
