@@ -77,24 +77,21 @@
     padding: 10px;
     font-family: Arial, sans-serif;
     z-index: 1000;
+    display: none; /* caché par défaut */
   }
-  /* Nouveau style pour le bouton */
-  #toggleStatsBtn {
+  #toggleStats {
     position: absolute;
     bottom: 200px;
     right: 10px;
     z-index: 1100;
-    padding: 8px 14px;
-    background: #0074D9;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-weight: bold;
-    cursor: pointer;
+    padding: 6px 12px;
     font-family: Arial, sans-serif;
-  }
-  #toggleStatsBtn:hover {
-    background: #005fa3;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 4px;
+    border: none;
+    background-color: #0078a8;
+    color: white;
   }
 </style>
 </head>
@@ -110,10 +107,9 @@
 
 <div id="legend" class="legend"></div>
 
-<!-- Bouton pour afficher/masquer stats -->
-<button id="toggleStatsBtn">Afficher stats</button>
+<button id="toggleStats">Afficher stats</button>
 
-<div id="stats" style="display:none;"><canvas id="chart"></canvas></div>
+<div id="stats"><canvas id="chart"></canvas></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
@@ -374,19 +370,19 @@ function updateStats() {
 afterMap.on('move', updateStats);
 beforeMap.on('move', updateStats);
 
-// --- AJOUT DU BOUTON --- //
-const toggleStatsBtn = document.getElementById('toggleStatsBtn');
+// Bouton afficher/masquer stats et déplacer slider
+const toggleStatsBtn = document.getElementById('toggleStats');
 const statsDiv = document.getElementById('stats');
 
 toggleStatsBtn.onclick = () => {
   if (statsDiv.style.display === 'none') {
     statsDiv.style.display = 'block';
     toggleStatsBtn.textContent = 'Masquer stats';
-    compare.setSlider(1.0); // pousse le curseur à droite
+    compare.setSlider(0);  // Pousse le curseur à droite (before à droite)
   } else {
     statsDiv.style.display = 'none';
     toggleStatsBtn.textContent = 'Afficher stats';
-    compare.setSlider(0.5); // repositionne au milieu (tu peux changer cette valeur)
+    compare.setSlider(0.5); // Retour milieu
   }
 };
 </script>
