@@ -126,26 +126,28 @@ html, body, #container, #before, #after {
 /* Boîte de statistiques */
 #statsBox {
   position: absolute;
-  bottom: 200px; /* Remonte le rectangle plus haut sur la carte */
+  bottom: 300px; /* Remonte le rectangle plus haut sur la carte */
   left: 10px;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 8px;
   padding: 8px;
   font-size: 4px; /* Texte plus petit */
-  max-width: 260px;
+  max-width: 300px;
   z-index: 1200;
 }
 
 /* Titre des stats */
 #statsBox h3 {
-  font-size: 6px; /* Réduit la taille du titre */
+  font-size: 8px; /* Réduit la taille du titre */
   margin: 4px 0;
   text-align: center;
 }
 
 /* Chart contenu */
 #chart {
-  max-height: 600px; /* Évite que ça dépasse */
+  width: 100% !important; /* prend toute la largeur */
+  height: 180px !important; /* ajuste la hauteur si besoin */
+
 }
   
 </style>
@@ -157,7 +159,7 @@ html, body, #container, #before, #after {
   <div id="before"></div>
 </div>
 <div id="stats">
-  <h3 style="margin:0 0 8px 0; font-size: 16px; font-weight: bold;">Répartition des stations visibles</h3>
+  <h3 style="margin:0 0 4px 0; font-size: 8px; font-weight: bold;">Répartition des stations visibles</h3>
   <canvas id="chart"></canvas>
 </div>
 <div class="legend" id="legend"></div>
@@ -473,6 +475,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
 
