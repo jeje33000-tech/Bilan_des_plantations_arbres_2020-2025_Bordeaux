@@ -82,14 +82,15 @@
     position: absolute;
     bottom: 60px;
     left: 10px;
-    width: 150px;
-    height: 100px;
+    width: 250px;
+    height: 180px;
     background: rgba(255,255,255,0.9);
     border-radius: 5px;
     padding: 10px;
     font-family: Arial, sans-serif;
     z-index: 1000;
     display: none; /* caché par défaut */
+    box-sizing: border-box; /* important pour inclure padding */
   }
   /* Labels en bas */
   #label-left, #label-right {
@@ -122,31 +123,42 @@
 html, body, #container, #before, #after {
   overflow: hidden !important;
 }
-
+ 
 /* Boîte de statistiques */
-#statsBox {
+#stats {
   position: absolute;
-  bottom: 100px; /* Remonte le rectangle plus haut sur la carte */
+  bottom: 100px; /* Remonte la boîte */
   left: 10px;
+  width: 280px;       /* Largeur fixe pour bien caler le contenu */
+  height: 200px;      /* Hauteur suffisante */
   background: rgba(255, 255, 255, 0.9);
   border-radius: 8px;
-  padding: 8px;
-  font-size: 4px; /* Texte plus petit */
-  max-width: 150px;
+  padding: 10px 12px;
+  box-sizing: border-box; /* padding inclus dans la taille */
+  font-family: Arial, sans-serif;
   z-index: 1200;
+  display: none; /* caché par défaut */
+  overflow: hidden; /* évite débordement */
 }
 
 /* Titre des stats */
-#statsBox h3 {
-  font-size: 12px; /* Réduit la taille du titre */
-  margin: 4px 0;
+#stats h3 {
+  font-size: 14px;  /* un peu plus petit */
+  margin: 0 0 8px 0;
+  padding: 0;
   text-align: center;
+  font-weight: bold;
+  line-height: 1.2;
 }
 
-/* Chart contenu */
+/* Graphique */
 #chart {
-   max-height: 100px;
+  width: 100% !important;  /* prend toute la largeur du parent */
+  height: calc(100% - 30px) !important; /* hauteur moins le titre */
+  max-height: 160px !important;
+  display: block;
 }
+
   
 </style>
 </head>
@@ -473,6 +485,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
 
