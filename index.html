@@ -132,7 +132,7 @@ html, body, #container, #before, #after {
   border-radius: 8px;
   padding: 8px;
   font-size: 4px; /* Texte plus petit */
-  max-width: 300px;
+  max-width: 280px;
   z-index: 1200;
 }
 
@@ -145,8 +145,7 @@ html, body, #container, #before, #after {
 
 /* Chart contenu */
 #chart {
-  width: 100% !important; /* prend toute la largeur */
-  height: 180px !important; /* ajuste la hauteur si besoin */
+   max-height: 180px;
 }
   
 </style>
@@ -335,7 +334,7 @@ compare.on('slide', e => {
   updateLabels(e.detail);
   updateStats();
 });
-updateLabels(0);
+updateLabels(1);
 
 // Fonction qui compte les stations visibles dans la vue courante
 function countVisibleStations(layerInfo) {
@@ -474,6 +473,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
 
