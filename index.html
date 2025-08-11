@@ -122,6 +122,31 @@
 html, body, #container, #before, #after {
   overflow: hidden !important;
 }
+
+ /* Ici tu colles le CSS */
+    #statsBox {
+      position: absolute;
+      bottom: 150px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 12px;
+      max-width: 260px;
+      z-index: 1200;
+    }
+
+    #statsBox h3 {
+      font-size: 14px;
+      margin: 4px 0;
+      text-align: center;
+    }
+
+    #chart {
+      max-height: 180px;
+    }
+
+  
 </style>
 </head>
 <body>
@@ -447,6 +472,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
 
