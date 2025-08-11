@@ -326,7 +326,7 @@ loadAllLayers().then(() => {
 const labelLeft = document.getElementById('label-left');
 const labelRight = document.getElementById('label-right');
 
-function (sliderPos) {
+function updateLabels(sliderPos) {
   labelLeft.style.opacity = sliderPos;
   labelRight.style.opacity = 1 - sliderPos;
 }
@@ -474,6 +474,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
 
