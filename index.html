@@ -114,10 +114,10 @@
   .mapboxgl-compare .mapboxgl-map canvas {
     transition: opacity 0.3s ease;
   }
-/* Supprimer ascenseurs (scrollbars) */
-  #container, #before, #after {
-    overflow: hidden !important;
-  }
+/* Supprimer les scrollbars sur toute la zone des cartes */
+html, body, #container, #before, #after {
+  overflow: hidden !important;
+}
 </style>
 </head>
 <body>
@@ -443,5 +443,6 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
