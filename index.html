@@ -82,7 +82,7 @@
     position: absolute;
     bottom: 40px;
     left: 10px;
-    width: 280px;
+    width: 350px;
     height: 220px;
     background: rgba(255,255,255,0.9);
     border-radius: 5px;
@@ -145,8 +145,8 @@ html, body, #container, #before, #after {
 
 /* Chart contenu */
 #chart {
- max-height: 180px;
-
+  width: 100% !important; /* prend toute la largeur */
+  height: 180px !important; /* ajuste la hauteur si besoin */
 }
   
 </style>
@@ -239,7 +239,7 @@ async function addLayer(info) {
         source: info.source,
         paint: {
           'fill-color': '#ffff00',
-          'fill-opacity': 0.3
+          'fill-opacity': 0.8
         },
         filter: ['==', 'fid', ''] // filtre vide = rien sélectionné au départ
       });
@@ -474,6 +474,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
 
