@@ -77,21 +77,7 @@
     font-size: 13px;
     max-width: 280px;
   }
-  /* Graphique en bas à gauche */
-  #stats {
-    position: absolute;
-    bottom: 60px;
-    left: 10px;
-    width: 250px;
-    height: 180px;
-    background: rgba(255,255,255,0.9);
-    border-radius: 5px;
-    padding: 10px;
-    font-family: Arial, sans-serif;
-    z-index: 1000;
-    display: none; /* caché par défaut */
-    box-sizing: border-box; /* important pour inclure padding */
-  }
+
   /* Labels en bas */
   #label-left, #label-right {
     position: absolute;
@@ -130,7 +116,7 @@ html, body, #container, #before, #after {
   bottom: 100px; /* Remonte la boîte */
   left: 10px;
   width: 280px;       /* Largeur fixe pour bien caler le contenu */
-  height: 180px;      /* Hauteur suffisante */
+  height: 160px;      /* Hauteur suffisante */
   background: rgba(255, 255, 255, 0.9);
   border-radius: 8px;
   padding: 10px 12px;
@@ -485,6 +471,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
 
