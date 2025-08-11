@@ -326,7 +326,7 @@ loadAllLayers().then(() => {
 const labelLeft = document.getElementById('label-left');
 const labelRight = document.getElementById('label-right');
 
-function updateLabels(sliderPos) {
+function (sliderPos) {
   labelLeft.style.opacity = sliderPos;
   labelRight.style.opacity = 1 - sliderPos;
 }
@@ -335,7 +335,7 @@ compare.on('slide', e => {
   updateLabels(e.detail);
   updateStats();
 });
-updateLabels(0);
+updateLabels(1);
 
 // Fonction qui compte les stations visibles dans la vue courante
 function countVisibleStations(layerInfo) {
@@ -474,6 +474,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
 
