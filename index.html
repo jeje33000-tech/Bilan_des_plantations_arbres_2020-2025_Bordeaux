@@ -140,9 +140,9 @@ html, body, #container, #before, #after {
 /* Graphique */
 #chart {
   width: 100% !important;  /* prend toute la largeur du parent */
-  height: calc(100% - 30px) !important; /* hauteur moins le titre */
-  max-height: 160px !important;
-  display: block;
+  height: 140px !important;  /*calc(100% - 30px) !important;*/ /* hauteur moins le titre */
+ image-rendering: crisp-edges; /* pour éviter flou sur certains navigateurs */
+  
 }
 
   
@@ -471,6 +471,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
 
