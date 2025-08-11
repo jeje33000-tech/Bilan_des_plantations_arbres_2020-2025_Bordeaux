@@ -10,7 +10,11 @@
   body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
   #container { position:relative; width:100%; height:100vh; }
   #before, #after { position:absolute; top:0; bottom:0; width:100%; }
-
+  
+/* Décaler les boutons zoom et boussole sous la bannière */
+.mapboxgl-ctrl-top-right {
+  top: 60px !important; /* Ajuste si ta bannière est plus haute ou plus basse */
+}
  /* Bannière verte en haut */
   #header {
     position: absolute;
@@ -443,6 +447,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
 
