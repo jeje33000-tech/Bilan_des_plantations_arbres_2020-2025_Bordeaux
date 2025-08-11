@@ -114,9 +114,9 @@ html, body, #container, #before, #after {
 #stats {
   position: absolute;
   bottom: 5px; /* Remonte la boîte */
-  left: 150px;
+  left: 140px;
   width: 280px;       /* Largeur fixe pour bien caler le contenu */
-  height: 180px;      /* Hauteur suffisante */
+  height: 170px;      /* Hauteur suffisante */
   background: rgba(255, 255, 255, 0.9);
   border-radius: 8px;
   padding: 10px 12px;
@@ -159,7 +159,7 @@ html, body, #container, #before, #after {
   <canvas id="chart"></canvas>
 </div>
 <div class="legend" id="legend"></div>
-<button id="btnToggleStats">Afficher stat mandat visibles sur la carte</button>
+<button id="btnToggleStats">Afficher stat</button>
 
 <div id="stats"><canvas id="chart"></canvas></div>
 
@@ -455,7 +455,7 @@ function toggleSlider() {
     btnToggleStats.textContent = 'Masquer stat';
   } else {
     statsDiv.style.display = 'none';
-    btnToggleStats.textContent = 'Afficher stat mandat visibles sur la carte';
+    btnToggleStats.textContent = 'Afficher stat';
   }
 }
 
@@ -471,6 +471,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
 
