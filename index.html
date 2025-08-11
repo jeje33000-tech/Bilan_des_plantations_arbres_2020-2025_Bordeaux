@@ -123,29 +123,30 @@ html, body, #container, #before, #after {
   overflow: hidden !important;
 }
 
- /* Ici tu colles le CSS */
-    #statsBox {
-      position: absolute;
-      bottom: 150px;
-      left: 10px;
-      background: rgba(255, 255, 255, 0.9);
-      border-radius: 8px;
-      padding: 8px;
-      font-size: 12px;
-      max-width: 260px;
-      z-index: 1200;
-    }
+/* Boîte de statistiques */
+#statsBox {
+  position: absolute;
+  bottom: 200px; /* Remonte le rectangle plus haut sur la carte */
+  left: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 8px; /* Texte plus petit */
+  max-width: 260px;
+  z-index: 1200;
+}
 
-    #statsBox h3 {
-      font-size: 14px;
-      margin: 4px 0;
-      text-align: center;
-    }
+/* Titre des stats */
+#statsBox h3 {
+  font-size: 10px; /* Réduit la taille du titre */
+  margin: 4px 0;
+  text-align: center;
+}
 
-    #chart {
-      max-height: 180px;
-    }
-
+/* Chart contenu */
+#chart {
+  max-height: 200px; /* Évite que ça dépasse */
+}
   
 </style>
 </head>
@@ -472,6 +473,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
 
