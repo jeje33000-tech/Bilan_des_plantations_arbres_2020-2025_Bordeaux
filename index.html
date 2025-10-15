@@ -193,12 +193,12 @@ const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {});
 
 // Définition couches
 const layersAvant = [
-  { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Stations avant 2020', data: null, totalCount: 0, visibleCount: 0 }
+  { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Sites arborés existants avant 2020', data: null, totalCount: 0, visibleCount: 0 }
 ];
 
 const layersApres = [
-  { map: afterMap, id: 'apres1-layer', source: 'apres1', color: '#FF4500', label: 'Création ou en cours', data: null, totalCount: 0, visibleCount: 0 },
-  { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Remplacements ou Densification', data: null, totalCount: 0, visibleCount: 0 },
+  { map: afterMap, id: 'apres1-layer', source: 'apres1', color: '#FF4500', label: 'Nouveaux sites plantés ou en cours de réalisation', data: null, totalCount: 0, visibleCount: 0 },
+  { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Sites densifiés ou renouvelés', data: null, totalCount: 0, visibleCount: 0 },
   { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'green', label: 'Non plantées', data: null, totalCount: 0, visibleCount: 0 }
 ];
 
@@ -471,28 +471,6 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
