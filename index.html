@@ -137,7 +137,7 @@ async function addLayer(info){
     info.totalCount = geojson.features.length;
 
     info.map.addSource(info.source, { type:'geojson', data:geojson });
-    info.map.addLayer({ id:info.id, type:'fill', source:info.source, paint:{'fill-color':info.color,'fill-opacity':0.6} });
+    info.map.addLayer({ id:info.id, type:'fill', source:info.source, paint:{'fill-color':info.color,'fill-opacity':0.8} });
     
     if(info.map===afterMap){
       info.map.addLayer({ id:info.id+'-highlight', type:'fill', source:info.source, paint:{'fill-color':'#ffff00','fill-opacity':0.8}, filter:['==','fid',''] });
@@ -213,4 +213,5 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom
 </script>
 </body>
 </html>
+
 
