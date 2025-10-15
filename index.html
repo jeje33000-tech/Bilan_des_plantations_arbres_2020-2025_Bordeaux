@@ -52,7 +52,7 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 
 /* Labels en bas */
 #label-left, #label-right {
-  top : 70px
+ // top : 70px
   position: absolute;
     bottom: 30px;
     padding: 5px 12px;
@@ -64,7 +64,8 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
     white-space: nowrap;
     z-index: 1000;
 }
-#label-left { left:10px; } #label-left::after { content:" ➔"; }
+#label-left { left:10px; } 
+  //#label-left::after { content:" ➔"; }
 #label-right { right:10px; }
 
 /* Surbrillance */
@@ -107,8 +108,8 @@ html, body, #container, #before, #after { overflow:hidden !important; }
   </table>
 </div>
 
-<div id="label-left">Après 2020</div>
-<div id="label-right">Avant 2020</div>
+<div id="label-left">Avant 2020</div>
+<div id="label-right">Après 2020</div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
@@ -218,6 +219,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom
 </script>
 </body>
 </html>
+
 
 
 
