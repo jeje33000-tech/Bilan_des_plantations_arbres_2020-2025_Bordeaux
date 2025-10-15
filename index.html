@@ -198,11 +198,11 @@ btnToggleStats.addEventListener('click', ()=>{
   statsVisible=!statsVisible;
   if(statsVisible){
     statsDiv.style.display='block';
-    btnToggleStats.textContent='Masquer le tableau';
+    btnToggleStats.textContent='Masquer les chiffres';
     compare.setSlider(sliderRight);
   } else {
     statsDiv.style.display='none';
-    btnToggleStats.textContent='Afficher statistiques';
+    btnToggleStats.textContent='Afficher les chiffres';
     compare.setSlider(sliderLeft);
   }
 });
@@ -230,5 +230,6 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom
 </script>
 </body>
 </html>
+
 
 
