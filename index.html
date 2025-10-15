@@ -52,8 +52,16 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 
 /* Labels en bas */
 #label-left, #label-right {
-  position:absolute; bottom:30px; padding:5px 12px; font-size:14px; font-weight:bold; opacity: 1 
-  background:rgba(255,255,255,0.85); border-radius:3px; pointer-events:none; white-space:nowrap; z-index:1000;
+   position: absolute;
+    bottom: 30px;
+    padding: 5px 12px;
+    font-size: 14px;
+    font-weight: bold;
+    background: rgba(255,255,255,0.85); /* cadre blanc semi-transparent */
+    border-radius: 3px;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 1000;
 }
 #label-left { left:10px; } #label-left::after { content:" ➔"; }
 #label-right { right:10px; }
@@ -209,4 +217,5 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom
 </script>
 </body>
 </html>
+
 
