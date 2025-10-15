@@ -16,7 +16,7 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 
 /* Bannière verte en haut */
 #header {
-  position:absolute; top:0; left:0; right:0;
+  position: absolute; top:0; left:0; right:0;
   background:#77c803; color:white; font-weight:bold;
   font-size:18px; line-height:36px; text-align:center; z-index:1500;
   user-select:none;
@@ -33,12 +33,16 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 .legend span.count { margin-left:auto; font-weight:bold; color:#333; }
 
 /* Bouton sous la légende */
-#btnToggleStats {
-  position:absolute; top: calc(50px + 140px); left:10px;
+#btnToggleStats, #btnAerial {
+  position:absolute; left:10px;
   z-index:1100; padding:8px 12px; background:#0074D9;
   color:white; border:none; border-radius:4px; cursor:pointer;
   font-size:13px; max-width:280px;
 }
+
+/* Positions boutons */
+#btnToggleStats { top:200px; }
+#btnAerial { top:240px; }
 
 /* Boîte de statistiques */
 #stats {
@@ -52,12 +56,18 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 
 /* Labels en bas */
 #label-left, #label-right {
-  position:absolute; bottom:80px; /* plus haut */
-  padding:5px 12px; font-size:14px; font-weight:bold;
-  background: rgba(255,255,255,0.85); border-radius:3px;
-  pointer-events:none; white-space:nowrap; z-index:1000;
+  position: absolute;
+  bottom: 80px;
+  padding: 5px 12px;
+  font-size: 14px;
+  font-weight: bold;
+  background: rgba(255,255,255,0.9);
+  border-radius: 3px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 1000;
 }
-#label-left { left:10px; } 
+#label-left { left:10px; }
 #label-right { right:10px; }
 
 /* Surbrillance */
@@ -75,7 +85,8 @@ html, body, #container, #before, #after { overflow:hidden !important; }
 </div>
 
 <div class="legend" id="legend"></div>
-<button id="btnToggleStats">Voir les chiffres</button>
+<button id="btnToggleStats">Afficher le tableau</button>
+<button id="btnAerial">Voir photo aérienne</button>
 
 <div id="stats">
   <h3 style="margin:0 0 6px 0; font-size:13px; font-weight:bold; text-align:center;">Bilan des plantations d’arbres 2020-2025</h3>
@@ -108,111 +119,95 @@ html, body, #container, #before, #after { overflow:hidden !important; }
 
 <script>
 mapboxgl.accessToken = 'pk.eyJ1IjoiamVqZTMzMDAwIiwiYSI6ImNtZTJ2c3RnaDAwczEyanF6bW9wODI0cTgifQ.AYOAKWDyDLP_fbKIz-QdwQ';
-
 const centerBordeaux = [-0.57409, 44.861022];
-const afterMap = new mapboxgl.Map({ container: 'after', style: 'mapbox://styles/mapbox/dark-v11', center:centerBordeaux, zoom:11.5 });
-const beforeMap = new mapboxgl.Map({ container: 'before', style: 'mapbox://styles/mapbox/dark-v11', center:centerBordeaux, zoom:11.5 });
+
+const afterMap = new mapboxgl.Map({ container:'after', style:'mapbox://styles/mapbox/dark-v11', center:centerBordeaux, zoom:11.5 });
+const beforeMap = new mapboxgl.Map({ container:'before', style:'mapbox://styles/mapbox/dark-v11', center:centerBordeaux, zoom:11.5 });
 
 // Compare
-const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {});
+const compare = new mapboxgl.Compare(afterMap,beforeMap,'#container',{});
 
-// Définition couches
-const layersAvant = [
-  { map: beforeMap, id: 'avant-layer', source: 'avant', color: 'green', label: 'Sites arborés existants avant 2020', data: null, totalCount: 0, visibleCount: 0 }
-];
-const layersApres = [
-  { map: afterMap, id: 'apres1-layer', source: 'apres1', color: '#FF4500', label: 'Nouveaux sites plantés ou en cours de réalisation', data: null, totalCount: 0, visibleCount: 0 },
-  { map: afterMap, id: 'apres2-layer', source: 'apres2', color: 'orange', label: 'Sites densifiés ou renouvelés', data: null, totalCount: 0, visibleCount: 0 },
-  { map: afterMap, id: 'apres3-layer', source: 'apres3', color: 'green', label: 'Non plantées', data: null, totalCount: 0, visibleCount: 0 }
+// Couches
+const layersAvant=[{ map: beforeMap, id:'avant-layer', source:'avant', color:'green', label:'Sites arborés existants avant 2020', data:null, totalCount:0, visibleCount:0 }];
+const layersApres=[
+  { map: afterMap, id:'apres1-layer', source:'apres1', color:'#FF4500', label:'Nouveaux sites plantés ou en cours de réalisation', data:null, totalCount:0, visibleCount:0 },
+  { map: afterMap, id:'apres2-layer', source:'apres2', color:'orange', label:'Sites densifiés ou renouvelés', data:null, totalCount:0, visibleCount:0 },
+  { map: afterMap, id:'apres3-layer', source:'apres3', color:'green', label:'Non plantées', data:null, totalCount:0, visibleCount:0 }
 ];
 
-let popup = null;
+let popup=null;
 
-// Fonction pour ajouter couche
+// Ajouter couche
 async function addLayer(info){
   try{
-    const resp = await fetch(info.source+'.geojson'); 
-    const geojson = await resp.json();
-    info.data = geojson;
-    info.totalCount = geojson.features.length;
+    const resp=await fetch(info.source+'.geojson');
+    const geojson=await resp.json();
+    info.data=geojson;
+    info.totalCount=geojson.features.length;
 
-    info.map.addSource(info.source, { type:'geojson', data:geojson });
-    info.map.addLayer({ id:info.id, type:'fill', source:info.source, paint:{'fill-color':info.color,'fill-opacity':0.8} });
+    info.map.addSource(info.source,{ type:'geojson', data:geojson });
+    info.map.addLayer({ id:info.id, type:'fill', source:info.source, paint:{'fill-color':info.color,'fill-opacity':0.8} }); // opacité plus forte
     
     if(info.map===afterMap){
-      info.map.addLayer({ id:info.id+'-highlight', type:'fill', source:info.source, paint:{'fill-color':'#ffff00','fill-opacity':0.8}, filter:['==','fid',''] });
+      info.map.addLayer({ id:info.id+'-highlight', type:'fill', source:info.source, paint:{'fill-color':'#ffff00','fill-opacity':0.9}, filter:['==','fid',''] });
     }
 
     info.map.addLayer({ id:info.id+'-label', type:'symbol', source:info.source, layout:{ 'text-field':['get','CODE_STATION'], 'text-font':['Open Sans Bold','Arial Unicode MS Bold'], 'text-size':11, 'text-offset':[0,0],'text-anchor':'center','visibility':'none'}, paint:{'text-color':info.color,'text-halo-color':'#000','text-halo-width':1} });
 
-    info.map.on('zoom', ()=>{ const zoom=info.map.getZoom(); const v = zoom>=15?'visible':'none'; if(info.map.getLayoutProperty(info.id+'-label','visibility')!==v){ info.map.setLayoutProperty(info.id+'-label','visibility',v); } });
+    info.map.on('zoom',()=>{ const zoom=info.map.getZoom(); const v=zoom>=15?'visible':'none'; if(info.map.getLayoutProperty(info.id+'-label','visibility')!==v){ info.map.setLayoutProperty(info.id+'-label','visibility',v); } });
 
     if(info.map===afterMap){
-      info.map.on('mousemove', info.id, (e)=>{ if(!e.features.length) return; const fid = e.features[0].properties.fid||''; info.map.setFilter(info.id+'-highlight',['==','fid',fid]); });
-      info.map.on('mouseleave', info.id, ()=>{ info.map.setFilter(info.id+'-highlight',['==','fid','']); });
+      info.map.on('mousemove', info.id,(e)=>{ if(!e.features.length) return; const fid=e.features[0].properties.fid||''; info.map.setFilter(info.id+'-highlight',['==','fid',fid]); });
+      info.map.on('mouseleave', info.id,()=>{ info.map.setFilter(info.id+'-highlight',['==','fid','']); });
     }
 
-    info.map.on('click', info.id, (e)=>{ if(!e.features.length) return; const feature=e.features[0]; const coordinates=e.lngLat; const codeStation=feature.properties.CODE_STATION||'N/A'; if(popup) popup.remove(); popup=new mapboxgl.Popup().setLngLat(coordinates).setHTML(`${codeStation}`).addTo(info.map); });
-    info.map.on('mouseenter', info.id, ()=>{ info.map.getCanvas().style.cursor='pointer'; });
-    info.map.on('mouseleave', info.id, ()=>{ info.map.getCanvas().style.cursor=''; });
-
+    info.map.on('click', info.id,(e)=>{ if(!e.features.length) return; const feature=e.features[0]; const coordinates=e.lngLat; const codeStation=feature.properties.CODE_STATION||'N/A'; if(popup) popup.remove(); popup=new mapboxgl.Popup().setLngLat(coordinates).setHTML(`${codeStation}`).addTo(info.map); });
+    info.map.on('mouseenter', info.id,()=>{ info.map.getCanvas().style.cursor='pointer'; });
+    info.map.on('mouseleave', info.id,()=>{ info.map.getCanvas().style.cursor=''; });
   } catch(err){ console.error('Erreur couche',info.source,err); }
 }
 
-// Charger toutes les couches
 async function loadAllLayers(){ for(const l of [...layersAvant,...layersApres]) await addLayer(l); }
 loadAllLayers().then(updateStats);
 
 function countVisibleStations(layerInfo){ if(!layerInfo.data) return 0; const bounds=layerInfo.map.getBounds(); return layerInfo.data.features.filter(f=>{ let coord=null; if(f.geometry.type==='Point'){coord=f.geometry.coordinates;} else if(f.geometry.type==='Polygon'){coord=f.geometry.coordinates[0][0];} else if(f.geometry.type==='MultiPolygon'){coord=f.geometry.coordinates[0][0][0];} return coord?bounds.contains(coord):false; }).length; }
 
-// Légende
 function createLegend(){
   const legendDiv=document.getElementById('legend'); legendDiv.innerHTML='';
   layersAvant.forEach(l=>{ if(!l.data) return; const item=document.createElement('div'); const colorBox=document.createElement('span'); colorBox.className='color-box'; colorBox.style.backgroundColor=l.color; item.appendChild(colorBox); item.appendChild(document.createTextNode(l.label)); const countSpan=document.createElement('span'); countSpan.className='count'; countSpan.textContent=`${l.totalCount}`; item.appendChild(countSpan); legendDiv.appendChild(item); });
   layersApres.filter(l=>l.label!=='Non plantées').forEach(l=>{ if(!l.data) return; const item=document.createElement('div'); const colorBox=document.createElement('span'); colorBox.className='color-box'; colorBox.style.backgroundColor=l.color; item.appendChild(colorBox); item.appendChild(document.createTextNode(l.label)); const countSpan=document.createElement('span'); countSpan.className='count'; countSpan.textContent=`${l.totalCount}`; item.appendChild(countSpan); legendDiv.appendChild(item); });
 }
 
-// Stats
-function updateStats(){
-  layersApres.forEach(l=>l.visibleCount=countVisibleStations(l));
-  createLegend();
-}
+function updateStats(){ layersApres.forEach(l=>l.visibleCount=countVisibleStations(l)); createLegend(); }
 
 // --- Bouton tableau ---
 const btnToggleStats=document.getElementById('btnToggleStats');
 const statsDiv=document.getElementById('stats');
 const container=document.getElementById('container');
-
-// Slider légèrement à gauche au départ, complètement à droite pour afficher stats
-const sliderPositions = [
-  container.offsetWidth * 0.2, // légèrement à gauche
-  container.offsetWidth        // complètement à droite
-];
+const sliderPositions=[container.offsetWidth/2, container.offsetWidth]; // milieu, droite
 let statsVisible=false;
+btnToggleStats.addEventListener('click',()=>{
+  statsVisible=!statsVisible;
+  if(statsVisible){ statsDiv.style.display='block'; btnToggleStats.textContent='Masquer le tableau'; compare.setSlider(sliderPositions[1]); }
+  else { statsDiv.style.display='none'; btnToggleStats.textContent='Afficher le tableau'; compare.setSlider(sliderPositions[0]); }
+});
 
-// Initialisation slider au chargement
-compare.setSlider(sliderPositions[0]);
-
-btnToggleStats.addEventListener('click', ()=>{
-  statsVisible = !statsVisible;
-  if(statsVisible){
-    statsDiv.style.display='block';
-    btnToggleStats.textContent='Masquer stat';
-    compare.setSlider(sliderPositions[1]); // slider à droite
-  } else {
-    statsDiv.style.display='none';
-    btnToggleStats.textContent='Afficher stat';
-    compare.setSlider(sliderPositions[0]); // slider légèrement à gauche
-  }
+// --- Bouton photo aérienne ---
+afterMap.on('load', ()=>{
+  afterMap.addSource('aerienne',{ type:'raster', url:'mapbox://mapbox.satellite', tileSize:256 });
+  afterMap.addLayer({ id:'aerienne-layer', type:'raster', source:'aerienne', layout:{ visibility:'none' } });
+});
+const btnAerial=document.getElementById('btnAerial');
+let aerialVisible=false;
+btnAerial.addEventListener('click',()=>{
+  aerialVisible=!aerialVisible;
+  afterMap.setLayoutProperty('aerienne-layer','visibility', aerialVisible?'visible':'none');
+  btnAerial.textContent = aerialVisible?'Masquer photo aérienne':'Voir photo aérienne';
 });
 
 // Contrôles Mapbox
 afterMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom:true }),'top-right');
 beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom:true }),'top-right');
-
 </script>
 </body>
 </html>
-
-
-
