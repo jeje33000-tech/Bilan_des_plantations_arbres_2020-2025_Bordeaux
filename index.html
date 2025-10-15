@@ -16,7 +16,7 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 
 /* Bannière verte en haut */
 #header {
-  position: absolute; top:0; left:0; right:0;
+  position:absolute; top:0; left:0; right:0;
   background:#77c803; color:white; font-weight:bold;
   font-size:18px; line-height:36px; text-align:center; z-index:1500;
   user-select:none;
@@ -52,20 +52,12 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 
 /* Labels en bas */
 #label-left, #label-right {
- // top : 70px
-  position: absolute;
-    bottom: 30px;
-    padding: 5px 12px;
-    font-size: 14px;
-    font-weight: bold;
-    background: rgba(255,255,255,0.85); /* cadre blanc semi-transparent */
-    border-radius: 3px;
-    pointer-events: none;
-    white-space: nowrap;
-    z-index: 1000;
+  position:absolute; bottom:60px; /* plus haut */
+  padding:5px 12px; font-size:14px; font-weight:bold;
+  background: rgba(255,255,255,0.85); border-radius:3px;
+  pointer-events:none; white-space:nowrap; z-index:1000;
 }
 #label-left { left:10px; } 
-  //#label-left::after { content:" ➔"; }
 #label-right { right:10px; }
 
 /* Surbrillance */
@@ -108,8 +100,8 @@ html, body, #container, #before, #after { overflow:hidden !important; }
   </table>
 </div>
 
-<div id="label-left">Avant 2020</div>
-<div id="label-right">Après 2020</div>
+<div id="label-left">Après 2020</div>
+<div id="label-right">Avant 2020</div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
@@ -171,12 +163,6 @@ async function addLayer(info){
 async function loadAllLayers(){ for(const l of [...layersAvant,...layersApres]) await addLayer(l); }
 loadAllLayers().then(updateStats);
 
-const labelLeft=document.getElementById('label-left');
-const labelRight=document.getElementById('label-right');
-//function updateLabels(sliderPos){ labelLeft.style.opacity=sliderPos; labelRight.style.opacity=1-sliderPos; }
-//compare.on('slide', e=>{ updateLabels(e.detail); updateStats(); });
-//updateLabels(1);
-
 function countVisibleStations(layerInfo){ if(!layerInfo.data) return 0; const bounds=layerInfo.map.getBounds(); return layerInfo.data.features.filter(f=>{ let coord=null; if(f.geometry.type==='Point'){coord=f.geometry.coordinates;} else if(f.geometry.type==='Polygon'){coord=f.geometry.coordinates[0][0];} else if(f.geometry.type==='MultiPolygon'){coord=f.geometry.coordinates[0][0][0];} return coord?bounds.contains(coord):false; }).length; }
 
 // Légende
@@ -196,11 +182,19 @@ function updateStats(){
 const btnToggleStats=document.getElementById('btnToggleStats');
 const statsDiv=document.getElementById('stats');
 const container=document.getElementById('container');
-const sliderPositions=[container.offsetWidth/2, container.offsetWidth]; // milieu, droite
+
+// Slider légèrement à gauche au départ, complètement à droite pour afficher stats
+const sliderPositions = [
+  container.offsetWidth * 0.2, // légèrement à gauche
+  container.offsetWidth        // complètement à droite
+];
 let statsVisible=false;
 
+// Initialisation slider au chargement
+compare.setSlider(sliderPositions[0]);
+
 btnToggleStats.addEventListener('click', ()=>{
-  statsVisible=!statsVisible;
+  statsVisible = !statsVisible;
   if(statsVisible){
     statsDiv.style.display='block';
     btnToggleStats.textContent='Masquer stat';
@@ -208,7 +202,7 @@ btnToggleStats.addEventListener('click', ()=>{
   } else {
     statsDiv.style.display='none';
     btnToggleStats.textContent='Afficher stat';
-    compare.setSlider(sliderPositions[0]); // slider milieu
+    compare.setSlider(sliderPositions[0]); // slider légèrement à gauche
   }
 });
 
@@ -219,7 +213,3 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom
 </script>
 </body>
 </html>
-
-
-
-
