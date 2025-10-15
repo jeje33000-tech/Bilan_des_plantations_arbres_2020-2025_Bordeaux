@@ -113,29 +113,21 @@ html, body, #container, #before, #after {
 /* Boîte de statistiques */
 #stats {
   position: absolute;
-  bottom: 5px; /* Remonte la boîte */
+  bottom: 5px;
   left: 130px;
-  width: 280px;       /* Largeur fixe pour bien caler le contenu */
-  height: 170px;      /* Hauteur suffisante */
-  background: rgba(255, 255, 255, 0.9);
+  width: 600px;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 8px;
   padding: 10px 12px;
-  box-sizing: border-box; /* padding inclus dans la taille */
   font-family: Arial, sans-serif;
   z-index: 1200;
-  display: none; /* caché par défaut */
-  overflow: hidden; /* évite débordement */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  overflow-x: auto;
+}
+#stats table th, #stats table td {
+  border: 1px solid #ddd;
 }
 
-/* Titre des stats */
-#stats h3 {
-  font-size: 14px;  /* un peu plus petit */
-  margin: 0 0 8px 0;
-  padding: 0;
-  text-align: center;
-  font-weight: bold;
-  line-height: 1.2;
-}
 
 /* Graphique */
 #chart {
@@ -155,9 +147,63 @@ html, body, #container, #before, #after {
   <div id="before"></div>
 </div>
 <div id="stats">
-  <h3 style="margin:0 0 4px 0; font-size: 12px; font-weight: bold;">Répartition des stations visibles</h3>
-  <canvas id="chart"></canvas>
+ <div id="stats">
+  <h3 style="margin:0 0 6px 0; font-size: 13px; font-weight: bold; text-align:center;">
+    Bilan des plantations d’arbres 2020-2025
+  </h3>
+  <table style="width:100%; font-size:12px; border-collapse:collapse; text-align:center;">
+    <thead>
+      <tr style="background:#f2f2f2;">
+        <th style="padding:6px;">Plantation d'arbres</th>
+        <th style="padding:6px;">2020/2021</th>
+        <th style="padding:6px;">2021/2022</th>
+        <th style="padding:6px;">2022/2023</th>
+        <th style="padding:6px;">2023/2024</th>
+        <th style="padding:6px;">2024/2025</th>
+        <th style="padding:6px;">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding:4px; text-align:left;">Arbres d’intérêt patrimonial futur</td>
+        <td>1113</td>
+        <td>1928</td>
+        <td>2034</td>
+        <td>2331</td>
+        <td>2540</td>
+        <td>9946</td>
+      </tr>
+      <tr>
+        <td style="padding:4px; text-align:left;">Arbres fruitiers</td>
+        <td>143</td>
+        <td>161</td>
+        <td>158</td>
+        <td>179</td>
+        <td>130</td>
+        <td>771</td>
+      </tr>
+      <tr>
+        <td style="padding:4px; text-align:left;">Nombre de micro-forêts</td>
+        <td>3</td>
+        <td>3</td>
+        <td>5</td>
+        <td>4</td>
+        <td>6</td>
+        <td>21</td>
+      </tr>
+      <tr>
+        <td style="padding:4px; text-align:left;">Arbres dans le cadre de plantations denses</td>
+        <td>4800</td>
+        <td>5224</td>
+        <td>11569</td>
+        <td>10888</td>
+        <td>16958</td>
+        <td>49439</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
+
 <div class="legend" id="legend"></div>
 <button id="btnToggleStats">Afficher stat</button>
 
@@ -472,6 +518,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
 
