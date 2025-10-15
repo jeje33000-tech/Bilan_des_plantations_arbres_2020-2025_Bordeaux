@@ -52,7 +52,7 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 
 /* Labels en bas */
 #label-left, #label-right {
-  position:absolute; bottom:60px; /* plus haut */
+  position:absolute; bottom:80px; /* plus haut */
   padding:5px 12px; font-size:14px; font-weight:bold;
   background: rgba(255,255,255,0.85); border-radius:3px;
   pointer-events:none; white-space:nowrap; z-index:1000;
@@ -100,8 +100,8 @@ html, body, #container, #before, #after { overflow:hidden !important; }
   </table>
 </div>
 
-<div id="label-left">Après 2020</div>
-<div id="label-right">Avant 2020</div>
+<div id="label-left">Avant 2020</div>
+<div id="label-right">Après 2020</div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
@@ -213,3 +213,4 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom
 </script>
 </body>
 </html>
+
