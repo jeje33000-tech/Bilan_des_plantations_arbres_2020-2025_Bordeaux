@@ -357,17 +357,15 @@ function createLegend() {
   const legendDiv = document.getElementById('legend');
   legendDiv.innerHTML = '';
 
-  const avantTitle = document.createElement('h4');
-  avantTitle.textContent = 'Avant 2020';
-  legendDiv.appendChild(avantTitle);
+  // Couches avant 2020
   layersAvant.forEach(l => {
-    if(!l.data) return;
+    if (!l.data) return;
     const item = document.createElement('div');
     const colorBox = document.createElement('span');
     colorBox.className = 'color-box';
     colorBox.style.backgroundColor = l.color;
     item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(`${l.label} (total)`));
+    item.appendChild(document.createTextNode(l.label)); // plus de (total)
     const countSpan = document.createElement('span');
     countSpan.className = 'count';
     countSpan.textContent = `${l.totalCount}`;
@@ -375,24 +373,27 @@ function createLegend() {
     legendDiv.appendChild(item);
   });
 
-  const apresTitle = document.createElement('h4');
-  apresTitle.textContent = 'Après 2020';
-  legendDiv.appendChild(apresTitle);
-  layersApres.forEach(l => {
-    if(!l.data) return;
-    const item = document.createElement('div');
-    const colorBox = document.createElement('span');
-    colorBox.className = 'color-box';
-    colorBox.style.backgroundColor = l.color;
-    item.appendChild(colorBox);
-    item.appendChild(document.createTextNode(`${l.label} (total)`));
-    const countSpan = document.createElement('span');
-    countSpan.className = 'count';
-    countSpan.textContent = `${l.totalCount}`;
-    item.appendChild(countSpan);
-    legendDiv.appendChild(item);
-  });
+  // Couches après 2020 (sauf "Non plantées")
+  layersApres
+    .filter(l => l.label !== 'Non plantées') // on enlève celle-là
+    .forEach(l => {
+      if (!l.data) return;
+      const item = document.createElement('div');
+      const colorBox = document.createElement('span');
+      colorBox.className = 'color-box';
+      colorBox.style.backgroundColor = l.color;
+      item.appendChild(colorBox);
+      item.appendChild(document.createTextNode(l.label)); // plus de (total)
+      const countSpan = document.createElement('span');
+      countSpan.className = 'count';
+      countSpan.textContent = `${l.totalCount}`;
+      item.appendChild(countSpan);
+      legendDiv.appendChild(item);
+    });
 }
+
+
+ 
 
 const ctx = document.getElementById('chart').getContext('2d');
 
@@ -471,6 +472,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoo
 
 </body>
 </html>
+
 
 
 
