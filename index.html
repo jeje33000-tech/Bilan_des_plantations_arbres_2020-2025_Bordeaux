@@ -11,54 +11,34 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 #container { position:relative; width:100%; height:100vh; }
 #before, #after { position:absolute; top:0; bottom:0; width:100%; }
 
-/* Décaler boutons zoom et boussole */
+/* Décaler boutons zoom et boussole sous la bannière */
 .mapboxgl-ctrl-top-right { top: 60px !important; }
 
-/* Bannière verte en haut */
-#header {
-  position:absolute; top:0; left:0; right:0;
-  background:#77c803; color:white; font-weight:bold;
-  font-size:18px; line-height:36px; text-align:center; z-index:1500;
-  user-select:none;
-}
+/* Bannière verte */
+#header { position:absolute; top:0; left:0; right:0; background:#77c803; color:white; font-weight:bold; font-size:18px; line-height:36px; text-align:center; z-index:1500; user-select:none; }
 
 /* Légende */
-.legend {
-  position:absolute; top:50px; left:10px;
-  background: rgba(255,255,255,0.9); padding:6px 12px;
-  border-radius:5px; font-size:12px; z-index:1000; max-width:280px;
-}
+.legend { position:absolute; top:50px; left:10px; background: rgba(255,255,255,0.9); padding:6px 12px; border-radius:5px; font-size:12px; z-index:1000; max-width:280px; }
 .legend div { display:flex; align-items:center; margin:2px 0; }
 .legend span.color-box { width:18px; height:14px; margin-right:6px; border:1px solid #555; flex-shrink:0; }
 .legend span.count { margin-left:auto; font-weight:bold; color:#333; }
 
-/* Boutons */
-#btnToggleStats, #btnAerial {
-  position:absolute; top:200px; z-index:1100; padding:8px 12px;
-  color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px;
-}
-#btnToggleStats { left:10px; background:#0074D9; }
-#btnAerial { right:10px; background:#FF4500; }
+/* Bouton sous la légende */
+#btnToggleStats { position:absolute; top:200px; left:10px; z-index:1100; padding:8px 12px; background:#0074D9; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; max-width:280px; }
+
+/* Bouton photo */
+#btnPhoto { position:absolute; top:200px; right:10px; z-index:1100; padding:8px 12px; background:#FF851B; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; max-width:280px; }
 
 /* Boîte de statistiques */
-#stats {
-  position:absolute; bottom:5px; left:130px;
-  width:600px; background: rgba(255,255,255,0.95);
-  border-radius:8px; padding:10px 12px; font-family: Arial,sans-serif;
-  z-index:1200; box-shadow:0 2px 8px rgba(0,0,0,0.2);
-  overflow-x:auto; display:none;
-}
-#stats table th, #stats table td { border:1px solid #ddd; }
+#stats { position:absolute; bottom:5px; left:5px; width:600px; background: rgba(255,255,255,0.95); border-radius:8px; padding:10px 12px; font-family: Arial,sans-serif; z-index:1200; box-shadow:0 2px 8px rgba(0,0,0,0.2); overflow-x:auto; display:none; }
+
+/* Tableau responsive */
+#stats table { width:100%; border-collapse:collapse; text-align:center; }
+#stats table th, #stats table td { border:1px solid #ddd; padding:6px; }
 
 /* Labels */
-#label-left, #label-right {
-  position: absolute; bottom:80px;
-  padding: 5px 12px;
-  font-size: 14px; font-weight:bold;
-  background: rgba(255,255,255,0.95);
-  border-radius: 3px; pointer-events:none; white-space:nowrap; z-index:1000;
-}
-#label-left { left:10px; } 
+#label-left, #label-right { position:absolute; bottom:80px; padding:5px 12px; font-size:14px; font-weight:bold; background: rgba(255,255,255,0.95); border-radius:3px; pointer-events:none; white-space:nowrap; z-index:1000; }
+#label-left { left:10px; }
 #label-right { right:10px; }
 
 /* Surbrillance */
@@ -66,6 +46,15 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 
 /* Supprimer scrollbars */
 html, body, #container, #before, #after { overflow:hidden !important; }
+
+/* Responsive mobile */
+@media screen and (max-width:600px){
+  #stats { width:90%; left:5px; padding:8px; font-size:11px; }
+  #stats table { display:block; overflow-x:auto; width:100%; }
+  #stats table th, #stats table td { padding:4px; font-size:11px; }
+  #btnToggleStats, #btnPhoto { top:180px; font-size:12px; padding:6px 10px; }
+  #label-left, #label-right { font-size:12px; padding:4px 8px; bottom:60px; }
+}
 </style>
 </head>
 <body>
@@ -77,12 +66,12 @@ html, body, #container, #before, #after { overflow:hidden !important; }
 </div>
 
 <div class="legend" id="legend"></div>
-<button id="btnToggleStats">Afficher tableau</button>
-<button id="btnAerial">Voir photo aérienne</button>
+<button id="btnToggleStats">Voir tableau</button>
+<button id="btnPhoto">Photo aérienne</button>
 
 <div id="stats">
   <h3 style="margin:0 0 6px 0; font-size:13px; font-weight:bold; text-align:center;">Bilan des plantations d’arbres 2020-2025</h3>
-  <table style="width:100%; font-size:12px; border-collapse:collapse; text-align:center;">
+  <table>
     <thead>
       <tr style="background:#f2f2f2;">
         <th>Plantation d'arbres</th>
@@ -118,67 +107,58 @@ const beforeMap = new mapboxgl.Map({ container:'before', style:'mapbox://styles/
 
 // Compare
 const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {});
-const container = document.getElementById('container');
 
-// Couches exemple
+// Couches
 const layersAvant = [
-  { map:beforeMap, id:'avant-layer', source:'avant', color:'green', label:'Sites arborés existants avant 2020', data:null, totalCount:0, visibleCount:0 }
+  { map: beforeMap, id:'avant-layer', source:'avant', color:'green', label:'Sites arborés existants avant 2020', data:null, totalCount:0, visibleCount:0 }
 ];
 const layersApres = [
-  { map:afterMap, id:'apres1-layer', source:'apres1', color:'#FF4500', label:'Nouveaux sites plantés ou en cours', data:null, totalCount:0, visibleCount:0 },
-  { map:afterMap, id:'apres2-layer', source:'apres2', color:'orange', label:'Sites densifiés ou renouvelés', data:null, totalCount:0, visibleCount:0 },
-  { map:afterMap, id:'apres3-layer', source:'apres3', color:'green', label:'Non plantées', data:null, totalCount:0, visibleCount:0 }
+  { map: afterMap, id:'apres1-layer', source:'apres1', color:'#FF4500', label:'Nouveaux sites plantés ou en cours', data:null, totalCount:0, visibleCount:0 },
+  { map: afterMap, id:'apres2-layer', source:'apres2', color:'orange', label:'Sites densifiés ou renouvelés', data:null, totalCount:0, visibleCount:0 },
+  { map: afterMap, id:'apres3-layer', source:'apres3', color:'green', label:'Non plantées', data:null, totalCount:0, visibleCount:0 }
 ];
 
 let popup=null;
+
+// Ajouter couche
 async function addLayer(info){
   try{
-    const resp = await fetch(info.source+'.geojson'); 
-    const geojson = await resp.json();
-    info.data = geojson;
-    info.totalCount = geojson.features.length;
+    const resp=await fetch(info.source+'.geojson');
+    const geojson=await resp.json();
+    info.data=geojson; info.totalCount=geojson.features.length;
 
     info.map.addSource(info.source,{ type:'geojson', data:geojson });
     info.map.addLayer({ id:info.id, type:'fill', source:info.source, paint:{'fill-color':info.color,'fill-opacity':0.8} });
 
     if(info.map===afterMap){
-      info.map.addLayer({ id:info.id+'-highlight', type:'fill', source:info.source, paint:{'fill-color':'#ffff00','fill-opacity':0.9}, filter:['==','fid',''] });
+      info.map.addLayer({ id:info.id+'-highlight', type:'fill', source:info.source, paint:{'fill-color':'#ffff00','fill-opacity':0.8}, filter:['==','fid',''] });
     }
 
-  }catch(err){ console.error('Erreur couche',info.source,err);}
+    info.map.addLayer({ id:info.id+'-label', type:'symbol', source:info.source, layout:{ 'text-field':['get','CODE_STATION'], 'text-font':['Open Sans Bold','Arial Unicode MS Bold'], 'text-size':11, 'text-offset':[0,0],'text-anchor':'center','visibility':'none'}, paint:{'text-color':info.color,'text-halo-color':'#000','text-halo-width':1} });
+
+    info.map.on('zoom', ()=>{ const zoom=info.map.getZoom(); const v = zoom>=15?'visible':'none'; if(info.map.getLayoutProperty(info.id+'-label','visibility')!==v){ info.map.setLayoutProperty(info.id+'-label','visibility',v); } });
+
+    if(info.map===afterMap){
+      info.map.on('mousemove', info.id, (e)=>{ if(!e.features.length) return; const fid=e.features[0].properties.fid||''; info.map.setFilter(info.id+'-highlight',['==','fid',fid]); });
+      info.map.on('mouseleave', info.id, ()=>{ info.map.setFilter(info.id+'-highlight',['==','fid','']); });
+    }
+
+    info.map.on('click', info.id, (e)=>{ if(!e.features.length) return; const feature=e.features[0]; const coordinates=e.lngLat; const codeStation=feature.properties.CODE_STATION||'N/A'; if(popup) popup.remove(); popup=new mapboxgl.Popup().setLngLat(coordinates).setHTML(`${codeStation}`).addTo(info.map); });
+    info.map.on('mouseenter', info.id, ()=>{ info.map.getCanvas().style.cursor='pointer'; });
+    info.map.on('mouseleave', info.id, ()=>{ info.map.getCanvas().style.cursor=''; });
+
+  } catch(err){ console.error('Erreur couche',info.source,err); }
 }
 
 async function loadAllLayers(){ for(const l of [...layersAvant,...layersApres]) await addLayer(l); }
 loadAllLayers().then(updateStats);
 
-// Légende
-function createLegend(){
-  const legendDiv = document.getElementById('legend'); legendDiv.innerHTML='';
-  layersAvant.forEach(l=>{
-    if(!l.data) return;
-    const item = document.createElement('div');
-    const colorBox = document.createElement('span'); colorBox.className='color-box'; colorBox.style.backgroundColor = l.color;
-    item.appendChild(colorBox); item.appendChild(document.createTextNode(l.label));
-    const countSpan = document.createElement('span'); countSpan.className='count'; countSpan.textContent=l.totalCount;
-    item.appendChild(countSpan); legendDiv.appendChild(item);
-  });
-  layersApres.filter(l=>l.label!=='Non plantées').forEach(l=>{
-    if(!l.data) return;
-    const item = document.createElement('div');
-    const colorBox = document.createElement('span'); colorBox.className='color-box'; colorBox.style.backgroundColor = l.color;
-    item.appendChild(colorBox); item.appendChild(document.createTextNode(l.label));
-    const countSpan = document.createElement('span'); countSpan.className='count'; countSpan.textContent=l.totalCount;
-    item.appendChild(countSpan); legendDiv.appendChild(item);
-  });
-}
+function countVisibleStations(layerInfo){ if(!layerInfo.data) return 0; const bounds=layerInfo.map.getBounds(); return layerInfo.data.features.filter(f=>{ let coord=null; if(f.geometry.type==='Point'){coord=f.geometry.coordinates;} else if(f.geometry.type==='Polygon'){coord=f.geometry.coordinates[0][0];} else if(f.geometry.type==='MultiPolygon'){coord=f.geometry.coordinates[0][0][0];} return coord?bounds.contains(coord):false; }).length; }
 
-function countVisibleStations(layerInfo){
-  if(!layerInfo.data) return 0;
-  const bounds = layerInfo.map.getBounds();
-  return layerInfo.data.features.filter(f=>{
-    let coord = f.geometry.coordinates;
-    return coord?bounds.contains(coord):false;
-  }).length;
+function createLegend(){
+  const legendDiv=document.getElementById('legend'); legendDiv.innerHTML='';
+  layersAvant.forEach(l=>{ if(!l.data) return; const item=document.createElement('div'); const colorBox=document.createElement('span'); colorBox.className='color-box'; colorBox.style.backgroundColor=l.color; item.appendChild(colorBox); item.appendChild(document.createTextNode(l.label)); const countSpan=document.createElement('span'); countSpan.className='count'; countSpan.textContent=`${l.totalCount}`; item.appendChild(countSpan); legendDiv.appendChild(item); });
+  layersApres.filter(l=>l.label!=='Non plantées').forEach(l=>{ if(!l.data) return; const item=document.createElement('div'); const colorBox=document.createElement('span'); colorBox.style.backgroundColor=l.color; item.appendChild(colorBox); item.appendChild(document.createTextNode(l.label)); const countSpan=document.createElement('span'); countSpan.className='count'; countSpan.textContent=`${l.totalCount}`; item.appendChild(countSpan); legendDiv.appendChild(item); });
 }
 
 function updateStats(){
@@ -186,14 +166,11 @@ function updateStats(){
   createLegend();
 }
 
-// Slider départ à gauche 25%
-const containerWidth = container.offsetWidth;
-const sliderStart = containerWidth*0.25;
-compare.setSlider(sliderStart);
-
 // Bouton tableau
-const btnToggleStats = document.getElementById('btnToggleStats');
-const statsDiv = document.getElementById('stats');
+const btnToggleStats=document.getElementById('btnToggleStats');
+const statsDiv=document.getElementById('stats');
+const container=document.getElementById('container');
+const sliderPositions=[container.offsetWidth*0.25, container.offsetWidth]; // un peu à gauche puis droite
 let statsVisible=false;
 
 btnToggleStats.addEventListener('click', ()=>{
@@ -201,49 +178,28 @@ btnToggleStats.addEventListener('click', ()=>{
   if(statsVisible){
     statsDiv.style.display='block';
     btnToggleStats.textContent='Masquer tableau';
-    compare.setSlider(containerWidth); // à droite
+    compare.setSlider(sliderPositions[1]);
   } else {
     statsDiv.style.display='none';
-    btnToggleStats.textContent='Afficher tableau';
-    compare.setSlider(sliderStart); // départ gauche
+    btnToggleStats.textContent='Voir tableau';
+    compare.setSlider(sliderPositions[0]);
   }
 });
 
-// Bouton photo aérienne
-const btnAerial = document.getElementById('btnAerial');
-let aerialVisible=false;
-let aerialOpacity = 0.7;
-
-// Ajouter couche photo aérienne fictive (à remplacer par vrai raster)
-[afterMap,beforeMap].forEach(map=>{
-  map.addSource('aerienne',{ type:'raster', url:'mapbox://mapbox.satellite', tileSize:256 });
-  map.addLayer({ id:'aerienne-layer', type:'raster', source:'aerienne', paint:{'raster-opacity':aerialOpacity}, layout:{visibility:'none'} });
-});
-
-btnAerial.addEventListener('click', ()=>{
-  aerialVisible=!aerialVisible;
-  [afterMap,beforeMap].forEach(map=>{
-    map.setLayoutProperty('aerienne-layer','visibility',aerialVisible?'visible':'none');
-    if(aerialVisible) map.setPaintProperty('aerienne-layer','raster-opacity',aerialOpacity);
-  });
-  btnAerial.textContent = aerialVisible ? 'Masquer photo aérienne' : 'Voir photo aérienne';
-});
-
-// Slider opacité
-const aerialSlider = document.createElement('input');
-aerialSlider.type='range'; aerialSlider.min=0; aerialSlider.max=100; aerialSlider.value=aerialOpacity*100;
-aerialSlider.style.position='absolute'; aerialSlider.style.top='250px'; aerialSlider.style.right='10px'; aerialSlider.style.zIndex=1101;
-document.body.appendChild(aerialSlider);
-aerialSlider.addEventListener('input', ()=>{
-  aerialOpacity=aerialSlider.value/100;
-  if(aerialVisible){
-    [afterMap,beforeMap].forEach(map=>map.setPaintProperty('aerienne-layer','raster-opacity',aerialOpacity));
-  }
+// Bouton photo aérienne (toggle)
+const btnPhoto=document.getElementById('btnPhoto');
+let photoVisible=false;
+btnPhoto.addEventListener('click', ()=>{
+  photoVisible=!photoVisible;
+  const styleURL = photoVisible ? 'mapbox://styles/mapbox/satellite-streets-v12' : 'mapbox://styles/mapbox/dark-v11';
+  afterMap.setStyle(styleURL);
+  beforeMap.setStyle(styleURL);
 });
 
 // Contrôles Mapbox
 afterMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom:true }),'top-right');
 beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom:true }),'top-right');
 </script>
+
 </body>
 </html>
