@@ -114,12 +114,12 @@ const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {});
 
 // Couches
 const layersAvant = [
-  { map:beforeMap, id:'avant-layer', source:'avant', color:'green', label:'Sites arborés existants avant 2020', data:null, totalCount:0, visible:true }
+  { map:beforeMap, id:'avant-layer', source:'avant', color:'#b7e4c7', label:'Sites arborés existants avant 2020', data:null, totalCount:0, visible:true }
 ];
 const layersApres = [
-  { map:afterMap, id:'apres1-layer', source:'apres1', color:'#FF4500', label:'Nouveaux sites plantés ou en cours de réalisation', data:null, totalCount:0, visible:true },
-  { map:afterMap, id:'apres2-layer', source:'apres2', color:'orange', label:'Sites densifiés ou renouvelés', data:null, totalCount:0, visible:true },
-  { map:afterMap, id:'apres3-layer', source:'apres3', color:'green', label:'Non plantées', data:null, totalCount:0, visible:true }
+  { map:afterMap, id:'apres1-layer', source:'apres1', color:'#70c29e', label:'Nouveaux sites plantés ou en cours de réalisation', data:null, totalCount:0, visible:true },
+  { map:afterMap, id:'apres2-layer', source:'apres2', color:'#40916c', label:'Sites densifiés ou renouvelés', data:null, totalCount:0, visible:true },
+  { map:afterMap, id:'apres3-layer', source:'apres3', color:'#b7e4c7', label:'Non plantées', data:null, totalCount:0, visible:true }
 ];
 
 let popup = null;
@@ -163,7 +163,7 @@ let popup = null;
             layout: {},
             paint: {
                 'fill-color': '#ffffff',
-                'fill-opacity': 0.1
+                'fill-opacity': 0.8
             }
         });
         afterMap.addLayer({
@@ -424,6 +424,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
