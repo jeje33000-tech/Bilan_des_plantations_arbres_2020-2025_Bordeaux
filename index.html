@@ -155,7 +155,7 @@ else {
 }
 
 // function createLegend() {
- function createLegend() {
+function createLegend() {
   const legendDiv = document.getElementById('legend');
   legendDiv.innerHTML = '';
   const allLayers = [...layersAvant, ...layersApres].filter(l => l.label !== 'Non plantées');
@@ -166,20 +166,21 @@ else {
     const item = document.createElement('div');
     item.style.display = 'flex';
     item.style.alignItems = 'center';
-    item.style.margin = '2px 0'; // réduire l'espacement vertical
+    item.style.margin = '4px 0'; // un peu plus d'espace vertical
     item.style.flexWrap = 'nowrap';
     item.style.width = '100%';
-    item.style.fontSize = '12px'; // texte un peu plus petit
+    item.style.fontSize = '13px';
     item.style.overflow = 'hidden';
+    item.style.height = '28px'; // augmente la hauteur de ligne pour confort
 
-    // Yeux SVG plus petits
+    // Yeux SVG légèrement plus grands
     const createEye = (pathD) => {
       const eye = document.createElementNS('http://www.w3.org/2000/svg','svg');
       eye.setAttribute('width','20'); 
       eye.setAttribute('height','20'); 
       eye.setAttribute('viewBox','0 0 24 24');
       eye.style.cursor='pointer';
-      eye.style.marginRight='4px';
+      eye.style.marginRight='5px';
       eye.style.flexShrink = '0';
       const path = document.createElementNS('http://www.w3.org/2000/svg','path');
       path.setAttribute('d', pathD);
@@ -208,13 +209,13 @@ else {
     eyeOpen.addEventListener('click', toggleLayer);
     eyeClosed.addEventListener('click', toggleLayer);
 
-    // carré couleur plus petit
+    // carré couleur un peu plus grand
     const colorBox = document.createElement('span');
     colorBox.className='color-box';
     colorBox.style.backgroundColor = l.color;
-    colorBox.style.width = '18px';
-    colorBox.style.height = '12px';
-    colorBox.style.marginRight = '4px';
+    colorBox.style.width = '22px';
+    colorBox.style.height = '16px';
+    colorBox.style.marginRight = '6px';
     colorBox.style.flexShrink = '0';
 
     const textNode = document.createTextNode(l.label);
@@ -222,7 +223,7 @@ else {
     countSpan.className='count';
     countSpan.textContent = l.totalCount;
     countSpan.style.marginLeft = 'auto';
-    countSpan.style.fontSize = '12px';
+    countSpan.style.fontSize = '13px';
 
     item.appendChild(eyeOpen);
     item.appendChild(eyeClosed);
@@ -233,11 +234,11 @@ else {
     legendDiv.appendChild(item);
   });
 
-  legendDiv.style.maxWidth = '95%';
-  legendDiv.style.fontSize = '12px';
-  legendDiv.style.padding = '6px 10px';
+  // Légende globale ajustée
+  legendDiv.style.maxWidth = '98%'; // un peu plus large
+  legendDiv.style.fontSize = '13px';
+  legendDiv.style.padding = '8px 14px'; // un peu plus de padding pour respirer
 }
-
 
 // Stats
 function updateStats(){ layersApres.forEach(l=>{ if(l.data) l.visibleCount=l.data.features.length; }); }
@@ -280,6 +281,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
