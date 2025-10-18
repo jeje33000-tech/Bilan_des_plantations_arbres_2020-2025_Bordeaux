@@ -187,7 +187,6 @@ function createLegend() {
     item.style.alignItems = 'center';
     item.style.margin = '2px 0';
 
-    // Fonction pour créer un œil SVG moderne
     const createEye = (pathD) => {
       const eye = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       eye.setAttribute('width', '16');
@@ -200,11 +199,8 @@ function createLegend() {
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', pathD);
       eye.appendChild(path);
-
-      // Changement de couleur au survol
       eye.addEventListener('mouseenter', () => { eye.style.fill = '#0074D9'; });
       eye.addEventListener('mouseleave', () => { eye.style.fill = '#000'; });
-
       return eye;
     };
 
@@ -213,7 +209,7 @@ function createLegend() {
 
     const eyeOpen = createEye(eyeOpenPath);
     const eyeClosed = createEye(eyeClosedPath);
-    eyeClosed.style.display = 'none'; // caché au départ
+    eyeClosed.style.display = 'none';
 
     item.appendChild(eyeOpen);
     item.appendChild(eyeClosed);
@@ -225,31 +221,27 @@ function createLegend() {
       eyeOpen.style.display = visible ? 'inline' : 'none';
       eyeClosed.style.display = visible ? 'none' : 'inline';
 
-      // Couches avant : visible/masqué sur les deux cartes
-      if (layersAvant.includes(l) || l.label === 'Sites arborés existants avant 2020') {
-        [beforeMap, afterMap].forEach(map => {
-          map.setLayoutProperty(l.id, visible ? 'visible' : 'none');
-          const labelVisible = visible && map.getZoom() >= 15 ? 'visible' : 'none';
-          map.setLayoutProperty(l.id + '-label', labelVisible);
-        });
-      }
+      // Déterminer sur quelles cartes agir
+      const mapsToUpdate = [];
+      if (layersAvant.includes(l) || l.label === 'Sites arborés existants avant 2020') mapsToUpdate.push(beforeMap, afterMap);
+      if (layersApres.includes(l)) mapsToUpdate.push(afterMap);
 
-      // Couches après : visible/masqué uniquement sur afterMap
-      if (layersApres.includes(l)) {
-        afterMap.setLayoutProperty(l.id, visible ? 'visible' : 'none');
-        const labelVisible = visible && afterMap.getZoom() >= 15 ? 'visible' : 'none';
-        afterMap.setLayoutProperty(l.id + '-label', labelVisible);
-      }
+      mapsToUpdate.forEach(map => {
+        map.setLayoutProperty(l.id, visible ? 'visible' : 'none');
+        const labelVisible = visible && map.getZoom() >= 15 ? 'visible' : 'none';
+        map.setLayoutProperty(l.id + '-label', labelVisible);
+      });
     };
 
     eyeOpen.addEventListener('click', toggleLayer);
     eyeClosed.addEventListener('click', toggleLayer);
 
-    // Événement zoom pour labels
+    // Zoom pour labels
     [beforeMap, afterMap].forEach(map => {
       map.on('zoom', () => {
-        const showLabel = visible && map.getZoom() >= 15 ? 'visible' : 'none';
-        map.setLayoutProperty(l.id + '-label', showLabel);
+        if (!visible) return;
+        const labelVisible = map.getZoom() >= 15 ? 'visible' : 'none';
+        map.setLayoutProperty(l.id + '-label', labelVisible);
       });
     });
 
@@ -336,6 +328,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom
 </script>
 </body>
 </html>
+
 
 
 
