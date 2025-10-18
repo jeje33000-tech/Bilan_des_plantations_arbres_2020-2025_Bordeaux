@@ -207,7 +207,7 @@ function createLegend() {
     item.style.margin = '4px 0'; // un peu plus d'espace vertical
     item.style.flexWrap = 'nowrap';
     item.style.width = '100%';
-    item.style.fontSize = '13px';
+    item.style.fontSize = '13.5px';
     item.style.overflow = 'hidden';
     item.style.height = '28px'; // augmente la hauteur de ligne pour confort
 
@@ -261,7 +261,7 @@ function createLegend() {
     countSpan.className='count';
     countSpan.textContent = l.totalCount;
     countSpan.style.marginLeft = 'auto';
-    countSpan.style.fontSize = '14px';
+    countSpan.style.fontSize = '13.5px';
 
     item.appendChild(eyeOpen);
     item.appendChild(eyeClosed);
@@ -275,7 +275,7 @@ function createLegend() {
   // Légende globale ajustée
   legendDiv.style.maxWidth = '90%'; // un peu plus large
   legendDiv.style.fontSize = '20px';
-  legendDiv.style.padding = '7px 13px'; // un peu plus de padding pour respirer
+  legendDiv.style.padding = '5px 3px'; // un peu plus de padding pour respirer
 }
 
 // Stats
@@ -319,6 +319,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
