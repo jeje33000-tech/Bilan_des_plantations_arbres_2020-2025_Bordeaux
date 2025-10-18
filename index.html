@@ -122,7 +122,7 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiamVqZTMzMDAwIiwiYSI6ImNtZTJ2c3RnaDAwczEyanF6b
 const centerBordeaux = [-0.57409, 44.861022];
 
 const afterMap = new mapboxgl.Map({ container:'after', style:'mapbox://styles/mapbox/dark-v11', center:centerBordeaux, zoom:11.5 });
-const beforeMap = new mapboxgl.Map({ container:'before', style:'mapbox://styles/mapbox/dark-v11', center:centerBordeaux, zoom:11.5 });
+const beforeMap = new mapboxgl.Map({ container:'before', style:'mapbox://styles/mapbox/dark-v11', center:centerBordeaux, zoom:11.5,interactive: false });
 const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {
   // touchmove: true,  // active le drag sur mobile si nécessaire
   mousemove: true      // permet le drag et le swipe
@@ -244,7 +244,7 @@ async function addLayer(info) {
     });
 
     info.map.on('mouseenter', info.id, () => info.map.getCanvas().style.cursor='pointer');
-    info.map.on('mouseleave', info.id, () => info.map.getCanvas().style.cursor='');
+   // info.map.on('mouseleave', info.id, () => info.map.getCanvas().style.cursor='');//
 
   } catch(err) {
     console.error('Erreur couche', info.source, err);
@@ -419,6 +419,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
