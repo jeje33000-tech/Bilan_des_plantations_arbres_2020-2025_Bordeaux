@@ -123,9 +123,7 @@ const layersApres = [
 ];
 
 let popup = null;
-
-// --- AJOUT DU CONTOUR DE LA COMMUNE ---
-
+// --- AJOUT DE LA COMMUNE ---
 async function addCommuneLayer() {
   try {
     const resp = await fetch('communebx.geojson');
@@ -137,13 +135,13 @@ async function addCommuneLayer() {
       id: 'commune-fill-before',
       type: 'fill',
       source: 'commune-before',
-      paint: { 'fill-color': '#ffffff', 'fill-opacity': 0.1 } // intérieur blanc 10%
+      paint: { 'fill-color': '#ffffff', 'fill-opacity': 0.1 }
     });
     beforeMap.addLayer({
       id: 'commune-outline-before',
       type: 'line',
       source: 'commune-before',
-      paint: { 'line-color': '#ffffff', 'line-width': 2 } // contour blanc
+      paint: { 'line-color': '#ffffff', 'line-width': 2 }
     });
 
     // AFTER MAP
@@ -152,13 +150,13 @@ async function addCommuneLayer() {
       id: 'commune-fill-after',
       type: 'fill',
       source: 'commune-after',
-      paint: { 'fill-color': '#ffffff', 'fill-opacity': 0.1 } // intérieur blanc 10%
+      paint: { 'fill-color': '#ffffff', 'fill-opacity': 0.1 }
     });
     afterMap.addLayer({
       id: 'commune-outline-after',
       type: 'line',
       source: 'commune-after',
-      paint: { 'line-color': '#ffffff', 'line-width': 2 } // contour blanc
+      paint: { 'line-color': '#ffffff', 'line-width': 2 }
     });
 
   } catch(err) {
@@ -166,90 +164,84 @@ async function addCommuneLayer() {
   }
 }
 
-
-
-
-
-// APPEL DE LA FONCTION
-addCommuneLayer();
-
-
-
-
-
-
-  
-// Ajouter couches
-async function addLayer(info){
+// --- AJOUT DES COUCHES AVANT/APRES ---
+async function addLayer(info) {
   try {
-    const resp = await fetch(info.source+'.geojson');
+    const resp = await fetch(info.source + '.geojson');
     const geojson = await resp.json();
     info.data = geojson;
     info.totalCount = geojson.features.length;
 
-    info.map.addSource(info.source,{type:'geojson', data:geojson});
-    info.map.addLayer({id:info.id, type:'fill', source:info.source, paint:{'fill-color':info.color,'fill-opacity':0.9}});
+    // Ajout source
+    info.map.addSource(info.source, { type: 'geojson', data: geojson });
 
-    
-    if(info.map === beforeMap){
-  info.map.addLayer({
-    id: info.id + '-highlight',
-    type: 'fill',
-    source: info.source,
-    paint: { 'fill-color': '#ffff00', 'fill-opacity': 0.8 },
-    filter: ['==','fid',''] 
-  });
+    // Couche principale
+    info.map.addLayer({
+      id: info.id,
+      type: 'fill',
+      source: info.source,
+      paint: { 'fill-color': info.color, 'fill-opacity': 0.9 }
+    });
 
-  info.map.on('mousemove', info.id, (e)=>{
-    if(!e.features.length) return;
-    const fid = e.features[0].properties.fid || '';
-    info.map.setFilter(info.id+'-highlight',['==','fid',fid]);
-  });
+    // Highlight au clic (simplifié pour fluidité)
+    info.map.addLayer({
+      id: info.id + '-highlight',
+      type: 'fill',
+      source: info.source,
+      paint: { 'fill-color': '#ffff00', 'fill-opacity': 0.8 },
+      filter: ['==','fid','']
+    });
 
-  info.map.on('mouseleave', info.id, ()=>{
-    info.map.setFilter(info.id+'-highlight',['==','fid','']);
-  });
-}
+    // Labels
+    info.map.addLayer({
+      id: info.id + '-label',
+      type: 'symbol',
+      source: info.source,
+      layout: {
+        'text-field': ['get', 'CODE_STATION'],
+        'text-font': ['Open Sans Bold','Arial Unicode MS Bold'],
+        'text-size': 11,
+        'text-offset': [0,0],
+        'text-anchor': 'center',
+        'visibility': 'none'
+      },
+      paint: { 'text-color': info.color, 'text-halo-color': '#000', 'text-halo-width': 1 }
+    });
 
-
-
-    
-    if(info.map===afterMap){
-      info.map.addLayer({id:info.id+'-highlight', type:'fill', source:info.source, paint:{'fill-color':'#ffff00','fill-opacity':0.8}, filter:['==','fid','']});
-    }
-    info.map.addLayer({id:info.id+'-label', type:'symbol', source:info.source, layout:{'text-field':['get','CODE_STATION'],'text-font':['Open Sans Bold','Arial Unicode MS Bold'],'text-size':11,'text-offset':[0,0],'text-anchor':'center','visibility':'none'}, paint:{'text-color':info.color,'text-halo-color':'#000','text-halo-width':1}});
-
-    info.map.on('zoom', ()=>{ 
+    // Afficher labels au zoom >= 15
+    info.map.on('zoom', () => {
       const v = info.map.getZoom() >= 15 ? 'visible' : 'none';
-      if(info.map.getLayoutProperty(info.id+'-label','visibility')!==v){ 
-        info.map.setLayoutProperty(info.id+'-label','visibility',v); 
-      } 
+      if(info.map.getLayoutProperty(info.id + '-label','visibility') !== v) {
+        info.map.setLayoutProperty(info.id + '-label','visibility',v);
+      }
     });
 
-    if(info.map===afterMap){
-      info.map.on('mousemove', info.id, (e)=>{ if(!e.features.length) return; const fid=e.features[0].properties.fid||''; info.map.setFilter(info.id+'-highlight',['==','fid',fid]); });
-      info.map.on('mouseleave', info.id, ()=>{ info.map.setFilter(info.id+'-highlight',['==','fid','']); });
-    }
-
-    info.map.on('click', info.id, (e)=>{ 
-      if(!e.features.length) return; 
-      const f=e.features[0]; 
-      const coords=e.lngLat; 
-      const code=f.properties.CODE_STATION||'N/A'; 
-      if(popup) popup.remove(); 
-      popup=new mapboxgl.Popup().setLngLat(coords).setHTML(`${code}`).addTo(info.map); 
+    // Popup simplifié
+    info.map.on('click', info.id, (e) => {
+      if(!e.features.length) return;
+      const f = e.features[0];
+      const coords = e.lngLat;
+      const code = f.properties.CODE_STATION || 'N/A';
+      if(popup) popup.remove();
+      popup = new mapboxgl.Popup().setLngLat(coords).setHTML(`${code}`).addTo(info.map);
     });
-    info.map.on('mouseenter', info.id, ()=>{ info.map.getCanvas().style.cursor='pointer'; });
-    info.map.on('mouseleave', info.id, ()=>{ info.map.getCanvas().style.cursor=''; });
 
-  } catch(err){ console.error('Erreur couche',info.source,err); }
+    info.map.on('mouseenter', info.id, () => info.map.getCanvas().style.cursor='pointer');
+    info.map.on('mouseleave', info.id, () => info.map.getCanvas().style.cursor='');
+
+  } catch(err) {
+    console.error('Erreur couche', info.source, err);
+  }
 }
 
-// Charger toutes les couches
-async function loadAllLayers(){
-  for(const l of [...layersAvant,...layersApres]) await addLayer(l);
+// --- CHARGEMENT DE TOUTES LES COUCHES ---
+async function loadAllLayers() {
+  await addCommuneLayer(); // commune avant/après
+  for(const l of [...layersAvant, ...layersApres]) await addLayer(l);
   createLegend();
 }
+
+
 
 // Appliquer visibilité
 function applyLayerVisibility(layerObj){
@@ -410,6 +402,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
