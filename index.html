@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<title>Bilan des plantations d'arbres/2020-2025/Bordeaux</title>
+<title>Bilan des plantations d'arbres 2020-2025 Bordeaux</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
 <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" rel="stylesheet" />
@@ -10,26 +10,21 @@
 body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 #container { position:relative; width:100%; height:100vh; }
 #before, #after { position:absolute; top:0; bottom:0; width:100%; }
-
 .mapboxgl-ctrl-top-right { top: 60px !important; }
 #header { position:absolute; top:0; left:0; right:0; background:#77c803; color:white; font-weight:bold; font-size:18px; line-height:36px; text-align:center; z-index:1500; user-select:none; }
 .legend { position:absolute; top:50px; left:10px; background: rgba(255,255,255,0.9); padding:6px 12px; border-radius:5px; font-size:12px; z-index:1000; max-width:280px; }
 .legend div { display:flex; align-items:center; margin:2px 0; }
 .legend span.color-box { width:18px; height:14px; margin-right:6px; border:1px solid #555; flex-shrink:0; }
 .legend span.count { margin-left:auto; font-weight:bold; color:#333; }
-
 #btnToggleStats, #btnPhoto { position:absolute; z-index:1100; padding:8px 12px; background:#0074D9; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; max-width:280px; }
 #btnToggleStats { top: calc(50px + 140px); left:10px; }
 #btnPhoto { top: calc(50px + 140px); right:10px; }
-
 #stats { position:absolute; bottom:5px; left:50%; transform:translateX(-50%); max-width:90%; width:600px; background: rgba(255,255,255,0.95); border-radius:8px; padding:10px 12px; font-family: Arial,sans-serif; z-index:1200; box-shadow:0 2px 8px rgba(0,0,0,0.2); overflow-x:auto; display:none; }
 #stats table { width:100%; border-collapse:collapse; text-align:center; }
 #stats table th, #stats table td { border:1px solid #ddd; padding:6px; font-size:12px; }
 @media screen and (max-width:600px){ #stats table th, #stats table td { font-size:10px; padding:4px; } }
-
 #label-left, #label-right { position:absolute; bottom:80px; padding:5px 12px; font-size:14px; font-weight:bold; background: rgba(255,255,255,0.9); border-radius:3px; pointer-events:none; white-space:nowrap; z-index:1000; }
 #label-left { left:10px; } #label-right { right:10px; }
-
 .mapboxgl-compare .mapboxgl-map canvas { transition: opacity 0.3s ease; }
 html, body, #container, #before, #after { overflow:hidden !important; }
 </style>
@@ -77,7 +72,6 @@ const afterMap = new mapboxgl.Map({ container:'after', style:'mapbox://styles/ma
 const beforeMap = new mapboxgl.Map({ container:'before', style:'mapbox://styles/mapbox/dark-v11', center:centerBordeaux, zoom:11.5 });
 const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {});
 
-// Définition des couches
 const layersAvant = [
   { map:beforeMap, id:'avant-layer', source:'avant', color:'green', label:'Sites arborés existants avant 2020', data:null, totalCount:0, visible:true }
 ];
@@ -135,13 +129,12 @@ async function loadAllLayers(){
   createLegend();
 }
 
-// Fonction pour appliquer la visibilité
+// Appliquer visibilité
 function applyLayerVisibility(layerObj){
   const mapsToUpdate = [];
   if(layersAvant.includes(layerObj) || layerObj.label==='Sites arborés existants avant 2020'){
     mapsToUpdate.push(beforeMap, afterMap);
     if(layerObj.label==='Sites arborés existants avant 2020'){
-      // masquer aussi apres3-layer
       const apres3 = layersApres.find(l=>l.id==='apres3-layer');
       if(apres3) { apres3.visible = layerObj.visible; applyLayerVisibility(apres3); }
     }
@@ -157,28 +150,23 @@ function applyLayerVisibility(layerObj){
   });
 }
 
-// Légende avec SVG gros yeux
+// Légende avec gros yeux SVG
 function createLegend(){
-  const legendDiv=document.getElementById('legend');
-  legendDiv.innerHTML='';
-  const allLayers=[...layersAvant,...layersApres].filter(l=>l.label!=='Non plantées');
+  const legendDiv = document.getElementById('legend');
+  legendDiv.innerHTML = '';
+  const allLayers = [...layersAvant,...layersApres].filter(l=>l.label!=='Non plantées');
 
   allLayers.forEach(l=>{
     if(!l.data) return;
 
-    const item=document.createElement('div');
-    item.style.display='flex'; item.style.alignItems='center'; item.style.margin='4px 0';
+    const item = document.createElement('div');
+    item.style.display = 'flex'; item.style.alignItems = 'center'; item.style.margin='4px 0';
 
-    // SVG yeux
-    const createEye = (pathD) => {
+    const createEye = (pathD)=>{
       const eye = document.createElementNS('http://www.w3.org/2000/svg','svg');
-      eye.setAttribute('width','24');
-      eye.setAttribute('height','24');
-      eye.setAttribute('viewBox','0 0 24 24');
+      eye.setAttribute('width','28'); eye.setAttribute('height','28'); eye.setAttribute('viewBox','0 0 24 24');
       eye.style.cursor='pointer'; eye.style.marginRight='6px'; eye.style.fill='#000';
-      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-      path.setAttribute('d',pathD);
-      eye.appendChild(path);
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path'); path.setAttribute('d',pathD); eye.appendChild(path);
       return eye;
     };
 
@@ -187,7 +175,6 @@ function createLegend(){
 
     const eyeOpen = createEye(eyeOpenPath);
     const eyeClosed = createEye(eyeClosedPath); eyeClosed.style.display='none';
-
     l.eyeOpen = eyeOpen; l.eyeClosed = eyeClosed;
 
     const toggleLayer = ()=>{
@@ -201,13 +188,11 @@ function createLegend(){
     eyeClosed.addEventListener('click', toggleLayer);
 
     const colorBox=document.createElement('span'); colorBox.className='color-box'; colorBox.style.backgroundColor=l.color;
-
     item.appendChild(eyeOpen); item.appendChild(eyeClosed); item.appendChild(colorBox); 
     item.appendChild(document.createTextNode(l.label));
 
     const countSpan=document.createElement('span'); countSpan.className='count'; countSpan.textContent=l.totalCount;
     item.appendChild(countSpan);
-
     legendDiv.appendChild(item);
   });
 }
@@ -250,7 +235,6 @@ const labelLeft=document.getElementById('label-left');
 const labelRight=document.getElementById('label-right');
 afterMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:true}),'top-right');
 beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:true}),'top-right');
-
 </script>
 </body>
 </html>
