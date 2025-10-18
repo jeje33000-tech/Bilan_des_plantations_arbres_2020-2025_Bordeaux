@@ -154,8 +154,8 @@ else {
   }
 }
 
-// Légende avec gros yeux SVG
-function createLegend() {
+// function createLegend() {
+ function createLegend() {
   const legendDiv = document.getElementById('legend');
   legendDiv.innerHTML = '';
   const allLayers = [...layersAvant, ...layersApres].filter(l => l.label !== 'Non plantées');
@@ -166,17 +166,17 @@ function createLegend() {
     const item = document.createElement('div');
     item.style.display = 'flex';
     item.style.alignItems = 'center';
-    item.style.margin = '4px 0';
+    item.style.margin = '2px 0'; // réduire l'espacement vertical
     item.style.flexWrap = 'nowrap';
     item.style.width = '100%';
-    item.style.fontSize = '14px';
+    item.style.fontSize = '12px'; // texte un peu plus petit
     item.style.overflow = 'hidden';
 
-    // Création des yeux SVG
+    // Yeux SVG plus petits
     const createEye = (pathD) => {
       const eye = document.createElementNS('http://www.w3.org/2000/svg','svg');
-      eye.setAttribute('width','28'); 
-      eye.setAttribute('height','28'); 
+      eye.setAttribute('width','20'); 
+      eye.setAttribute('height','20'); 
       eye.setAttribute('viewBox','0 0 24 24');
       eye.style.cursor='pointer';
       eye.style.marginRight='4px';
@@ -208,13 +208,13 @@ function createLegend() {
     eyeOpen.addEventListener('click', toggleLayer);
     eyeClosed.addEventListener('click', toggleLayer);
 
-    // carré couleur
+    // carré couleur plus petit
     const colorBox = document.createElement('span');
     colorBox.className='color-box';
     colorBox.style.backgroundColor = l.color;
-    colorBox.style.width = '22px';
-    colorBox.style.height = '16px';
-    colorBox.style.marginRight = '6px';
+    colorBox.style.width = '18px';
+    colorBox.style.height = '12px';
+    colorBox.style.marginRight = '4px';
     colorBox.style.flexShrink = '0';
 
     const textNode = document.createTextNode(l.label);
@@ -222,7 +222,7 @@ function createLegend() {
     countSpan.className='count';
     countSpan.textContent = l.totalCount;
     countSpan.style.marginLeft = 'auto';
-    countSpan.style.fontSize = '14px';
+    countSpan.style.fontSize = '12px';
 
     item.appendChild(eyeOpen);
     item.appendChild(eyeClosed);
@@ -233,11 +233,11 @@ function createLegend() {
     legendDiv.appendChild(item);
   });
 
-  // Ajuster largeur max du rectangle blanc
   legendDiv.style.maxWidth = '95%';
-  legendDiv.style.fontSize = '14px';
-  legendDiv.style.padding = '8px 12px';
+  legendDiv.style.fontSize = '12px';
+  legendDiv.style.padding = '6px 10px';
 }
+
 
 // Stats
 function updateStats(){ layersApres.forEach(l=>{ if(l.data) l.visibleCount=l.data.features.length; }); }
@@ -280,6 +280,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
