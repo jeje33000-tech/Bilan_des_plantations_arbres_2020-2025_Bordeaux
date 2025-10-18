@@ -260,7 +260,13 @@ function createLegend() {
     colorBox.style.marginRight = '6px';
     colorBox.style.flexShrink = '0';
 
-    const textNode = document.createTextNode(l.label);
+   const textSpan = document.createElement('span');
+textSpan.className = 'layer-text';
+textSpan.textContent = l.label;
+textSpan.style.flex = '1';       // occupe l'espace restant
+textSpan.style.textAlign = 'justify'; // justifié
+item.appendChild(textSpan);
+
     const countSpan = document.createElement('span');
     countSpan.className='count';
     countSpan.textContent = l.totalCount;
@@ -323,6 +329,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
