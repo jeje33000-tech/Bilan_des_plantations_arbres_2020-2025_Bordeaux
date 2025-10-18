@@ -140,7 +140,7 @@ let popup = null;
             layout: {},
             paint: {
                 'fill-color': '#ffffff',
-                'fill-opacity': 0.1,          // intérieur transparent
+                'fill-opacity': 0,          // intérieur transparent
             }
         });
         beforeMap.addLayer({
@@ -163,7 +163,7 @@ let popup = null;
             layout: {},
             paint: {
                 'fill-color': '#ffffff',
-                'fill-opacity': 0.8
+                'fill-opacity': 1
             }
         });
         afterMap.addLayer({
@@ -424,6 +424,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
