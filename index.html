@@ -26,7 +26,7 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 #stats table { width:100%; border-collapse:collapse; text-align:center; }
 #stats table th, #stats table td { border:1px solid #ddd; padding:6px; font-size:12px; }
 @media screen and (max-width:600px){ #stats table th, #stats table td { font-size:10px; padding:4px; } }
-#label-left, #label-right { position:absolute; bottom:80px; padding:3px 2px; font-size:14px; font-weight:bold; background: rgba(255,255,255,0.7); border-radius:3px; pointer-events:none; white-space:nowrap; z-index:1000; }
+#label-left, #label-right { position:absolute; bottom:80px; padding:3px 2px; font-size:14px; font-weight:bold; background: rgba(255,255,255,0.7); border-radius:3px; pointer-events:none; white-space:nowrap; z-index:1000;display: flex; align-items: center;gap: 4px   ; }
 #label-left { left:5px; } #label-right { right:5px; }
    #label-left::before {
     content: '⬅';
@@ -322,6 +322,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
