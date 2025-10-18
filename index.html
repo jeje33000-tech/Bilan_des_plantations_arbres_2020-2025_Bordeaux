@@ -35,14 +35,14 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 #label-left { left:5px; } #label-right { right:5px; }
    #label-left::before {
     content: '⬅';
-    margin-right: 3px;
+    margin-right: 0px;
     font-size: 18px;  /* Ajuste la taille de la flèche */
     vertical-align: middle;
   }
 
   #label-right::after {
     content: '➡';
-    margin-left: 30px;
+    margin-left: 0px;
     font-size: 18px;  /* Ajuste la taille de la flèche */
     vertical-align: middle;
   }
@@ -336,6 +336,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
