@@ -202,7 +202,7 @@ async function addLayer(info){
     info.totalCount = geojson.features.length;
 
     info.map.addSource(info.source,{type:'geojson', data:geojson});
-    info.map.addLayer({id:info.id, type:'fill', source:info.source, paint:{'fill-color':info.color,'fill-opacity':0.7}});
+    info.map.addLayer({id:info.id, type:'fill', source:info.source, paint:{'fill-color':info.color,'fill-opacity':0.9}});
 
     
     if(info.map === beforeMap){
@@ -424,6 +424,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
