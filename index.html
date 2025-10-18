@@ -125,34 +125,55 @@ const layersApres = [
 let popup = null;
 
 // --- AJOUT DU CONTOUR DE LA COMMUNE ---
-async function addCommuneLayer() {
+
+    async function addCommuneLayer() {
     try {
         const resp = await fetch('communebx.geojson');
         const geojson = await resp.json();
 
+        // BEFORE MAP
         beforeMap.addSource('commune', { type: 'geojson', data: geojson });
         beforeMap.addLayer({
-            id: 'commune-layer',
+            id: 'commune-fill',
             type: 'fill',
             source: 'commune',
             layout: {},
             paint: {
                 'fill-color': '#ffffff',
-                'fill-opacity': 0.1,
-                'fill-outline-color': '#ffffff'
+                'fill-opacity': 0.1,          // intérieur transparent
+            }
+        });
+        beforeMap.addLayer({
+            id: 'commune-outline',
+            type: 'line',
+            source: 'commune',
+            layout: {},
+            paint: {
+                'line-color': '#ffffff',     // contour blanc
+                'line-width': 2
             }
         });
 
+        // AFTER MAP
         afterMap.addSource('commune', { type: 'geojson', data: geojson });
         afterMap.addLayer({
-            id: 'commune-layer',
+            id: 'commune-fill',
             type: 'fill',
             source: 'commune',
             layout: {},
             paint: {
                 'fill-color': '#ffffff',
-                'fill-opacity': 0.1,
-                'fill-outline-color': '#ffffff'
+                'fill-opacity': 0.1
+            }
+        });
+        afterMap.addLayer({
+            id: 'commune-outline',
+            type: 'line',
+            source: 'commune',
+            layout: {},
+            paint: {
+                'line-color': '#ffffff',
+                'line-width': 2
             }
         });
 
@@ -160,6 +181,8 @@ async function addCommuneLayer() {
         console.error('Erreur couche commune:', err);
     }
 }
+
+
 
 // APPEL DE LA FONCTION
 addCommuneLayer();
@@ -401,6 +424,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
