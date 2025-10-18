@@ -208,18 +208,18 @@ function createLegend() {
     const item = document.createElement('div');
     item.style.display = 'flex';
     item.style.alignItems = 'center';
-    item.style.margin = '4px 0'; // un peu plus d'espace vertical
+    item.style.margin = '4px 0';
     item.style.flexWrap = 'nowrap';
     item.style.width = '100%';
     item.style.fontSize = '14px';
     item.style.overflow = 'hidden';
-    item.style.height = '28px'; // augmente la hauteur de ligne pour confort
+    item.style.height = '28px';
 
-    // Yeux SVG légèrement plus grands
+    // Yeux SVG
     const createEye = (pathD) => {
       const eye = document.createElementNS('http://www.w3.org/2000/svg','svg');
-      eye.setAttribute('width','20'); 
-      eye.setAttribute('height','20'); 
+      eye.setAttribute('width','18'); 
+      eye.setAttribute('height','18'); 
       eye.setAttribute('viewBox','0 0 24 24');
       eye.style.cursor='pointer';
       eye.style.marginRight='5px';
@@ -251,36 +251,38 @@ function createLegend() {
     eyeOpen.addEventListener('click', toggleLayer);
     eyeClosed.addEventListener('click', toggleLayer);
 
-    // carré couleur un peu plus grand
+    // Carré couleur
     const colorBox = document.createElement('span');
     colorBox.className='color-box';
     colorBox.style.backgroundColor = l.color;
-    colorBox.style.width = '22px';
+    colorBox.style.width = '20px';
     colorBox.style.height = '16px';
-    colorBox.style.marginRight = '6px';
+    colorBox.style.marginRight = '5px';
     colorBox.style.flexShrink = '0';
 
-   const textSpan = document.createElement('span');
-textSpan.className = 'layer-text';
-textSpan.textContent = l.label;
-textSpan.style.flex = '1';       // occupe l'espace restant
-textSpan.style.textAlign = 'justify'; // justifié
-item.appendChild(textSpan);
+    // Texte justifié
+    const textSpan = document.createElement('span');
+    textSpan.className = 'layer-text';
+    textSpan.textContent = l.label;
+    textSpan.style.flex = '1';
+    textSpan.style.textAlign = 'justify';
+    textSpan.style.marginRight = '5px';
 
     const countSpan = document.createElement('span');
     countSpan.className='count';
     countSpan.textContent = l.totalCount;
-    countSpan.style.marginLeft = 'auto';
+    countSpan.style.flexShrink = '0';
     countSpan.style.fontSize = '14.5px';
 
     item.appendChild(eyeOpen);
     item.appendChild(eyeClosed);
     item.appendChild(colorBox);
-    item.appendChild(textNode);
+    item.appendChild(textSpan);
     item.appendChild(countSpan);
 
     legendDiv.appendChild(item);
   });
+  
 
   // Légende globale ajustée
   legendDiv.style.maxWidth = '90%'; // un peu plus large
@@ -329,6 +331,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
