@@ -223,8 +223,14 @@ btnPhoto.addEventListener('click', () => {
   afterMap.once('styledata', loadAllLayers);
   beforeMap.once('styledata', loadAllLayers);
 
-  // ✅ Changement du texte du bouton
-  btnPhoto.textContent = photoVisible ? 'Plan noir et blanc' : 'Photo aérienne';
+  // ✅ Changement du texte et de la couleur
+  if (photoVisible) {
+    btnPhoto.textContent = 'Plan noir et blanc';
+    btnPhoto.style.background = '#0074D9'; // même bleu que le bouton stats
+  } else {
+    btnPhoto.textContent = 'Photo aérienne';
+    btnPhoto.style.background = '#FF851B'; // orange d’origine
+  }
 });
 
 // Labels
@@ -238,6 +244,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom
 </script>
 </body>
 </html>
+
 
 
 
