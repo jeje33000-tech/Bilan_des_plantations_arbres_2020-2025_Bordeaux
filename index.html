@@ -124,6 +124,52 @@ const layersApres = [
 
 let popup = null;
 
+// --- AJOUT DU CONTOUR DE LA COMMUNE ---
+async function addCommuneLayer() {
+    try {
+        const resp = await fetch('communebx.geojson');
+        const geojson = await resp.json();
+
+        beforeMap.addSource('commune', { type: 'geojson', data: geojson });
+        beforeMap.addLayer({
+            id: 'commune-layer',
+            type: 'fill',
+            source: 'commune',
+            layout: {},
+            paint: {
+                'fill-color': '#ffffff',
+                'fill-opacity': 0.1,
+                'fill-outline-color': '#ffffff'
+            }
+        });
+
+        afterMap.addSource('commune', { type: 'geojson', data: geojson });
+        afterMap.addLayer({
+            id: 'commune-layer',
+            type: 'fill',
+            source: 'commune',
+            layout: {},
+            paint: {
+                'fill-color': '#ffffff',
+                'fill-opacity': 0.1,
+                'fill-outline-color': '#ffffff'
+            }
+        });
+
+    } catch(err) {
+        console.error('Erreur couche commune:', err);
+    }
+}
+
+// APPEL DE LA FONCTION
+addCommuneLayer();
+
+
+
+
+
+
+  
 // Ajouter couches
 async function addLayer(info){
   try {
@@ -355,6 +401,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
