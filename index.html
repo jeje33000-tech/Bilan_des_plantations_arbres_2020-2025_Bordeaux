@@ -8,8 +8,10 @@
 <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" rel="stylesheet" />
 <style>
 body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
-#container { position:relative; width:100%; height:100vh; }
-#before, #after { position:absolute; top:0; bottom:0; width:100%; }
+#container { position:absolute; width:100%; height:100%; top: 0; bottom: 0;}
+  #before, #after {  pointer-events: auto;}
+#before { position:absolute; top:0; bottom:0; width:100%;z-index: 0; }
+  #after { position:absolute; top:0; bottom:0; width:100%; z-index: 1;}
 .mapboxgl-ctrl-top-right { top: 60px !important; }
 #header { position:absolute; top:0; left:0; right:0; background:#77c803; color:white; font-weight:bold; font-size:18px; line-height:36px; text-align:center; z-index:1500; user-select:none; }
   /* 🔽 Position de la barre de zoom et boussole 🔽 */
@@ -121,7 +123,11 @@ const centerBordeaux = [-0.57409, 44.861022];
 
 const afterMap = new mapboxgl.Map({ container:'after', style:'mapbox://styles/mapbox/dark-v11', center:centerBordeaux, zoom:11.5 });
 const beforeMap = new mapboxgl.Map({ container:'before', style:'mapbox://styles/mapbox/dark-v11', center:centerBordeaux, zoom:11.5 });
-const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {});
+const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {
+  // touchmove: true,  // active le drag sur mobile si nécessaire
+  mousemove: true      // permet le drag et le swipe
+});
+
 
 // Couches
 const layersAvant = [
@@ -413,6 +419,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
