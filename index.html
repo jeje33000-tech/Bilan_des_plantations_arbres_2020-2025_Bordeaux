@@ -166,17 +166,20 @@ function createLegend() {
     const item = document.createElement('div');
     item.style.display = 'flex';
     item.style.alignItems = 'center';
-    item.style.margin = '4px 0'; // même espace qu'avant
+    item.style.margin = '4px 0'; // même espacement
+    item.style.flexWrap = 'nowrap'; // pas de retour à la ligne
+    item.style.width = '100%'; // prend toute la largeur dispo
+    item.style.fontSize = '16px'; // texte plus gros
 
     // Fonction pour créer les yeux SVG
     const createEye = (pathD, visible) => {
       const eye = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      eye.setAttribute('width', '32'); 
-      eye.setAttribute('height', '32'); 
+      eye.setAttribute('width', '36'); 
+      eye.setAttribute('height', '36'); 
       eye.setAttribute('viewBox', '0 0 24 24');
       eye.style.cursor = 'pointer';
-      eye.style.marginRight = '8px';
-      eye.style.fill = visible ? '#4CAF50' : '#888'; // vert si visible, gris si masqué
+      eye.style.marginRight = '10px';
+      eye.style.fill = visible ? '#4CAF50' : '#888';
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', pathD);
       eye.appendChild(path);
@@ -197,7 +200,6 @@ function createLegend() {
       l.visible = !l.visible;
       l.eyeOpen.style.display = l.visible ? 'inline' : 'none';
       l.eyeClosed.style.display = l.visible ? 'none' : 'inline';
-      // changer la couleur des yeux selon l'état
       l.eyeOpen.style.fill = l.visible ? '#4CAF50' : '#888';
       l.eyeClosed.style.fill = !l.visible ? '#4CAF50' : '#888';
       applyLayerVisibility(l);
@@ -206,13 +208,13 @@ function createLegend() {
     eyeOpen.addEventListener('click', toggleLayer);
     eyeClosed.addEventListener('click', toggleLayer);
 
-    // carré couleur
+    // carré couleur plus grand
     const colorBox = document.createElement('span');
     colorBox.className = 'color-box';
     colorBox.style.backgroundColor = l.color;
-    colorBox.style.width = '22px';
-    colorBox.style.height = '18px';
-    colorBox.style.marginRight = '8px';
+    colorBox.style.width = '28px';
+    colorBox.style.height = '20px';
+    colorBox.style.marginRight = '10px';
     colorBox.style.flexShrink = '0';
 
     // texte et compteur
@@ -221,7 +223,7 @@ function createLegend() {
     countSpan.className = 'count';
     countSpan.textContent = l.totalCount;
     countSpan.style.marginLeft = 'auto';
-    countSpan.style.fontSize = '14px'; // un peu plus grand
+    countSpan.style.fontSize = '16px';
 
     item.appendChild(eyeOpen);
     item.appendChild(eyeClosed);
@@ -274,5 +276,6 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
