@@ -10,27 +10,21 @@
 body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 #container { position:relative; width:100%; height:100vh; }
 #before, #after { position:absolute; top:0; bottom:0; width:100%; }
-
 .mapboxgl-ctrl-top-right { top: 60px !important; }
 #header { position:absolute; top:0; left:0; right:0; background:#77c803; color:white; font-weight:bold; font-size:18px; line-height:36px; text-align:center; z-index:1500; user-select:none; }
-
 .legend { position:absolute; top:50px; left:10px; background: rgba(255,255,255,0.9); padding:6px 12px; border-radius:5px; font-size:12px; z-index:1000; max-width:280px; }
 .legend div { display:flex; align-items:center; margin:2px 0; }
 .legend span.color-box { width:18px; height:14px; margin-right:6px; border:1px solid #555; flex-shrink:0; }
 .legend span.count { margin-left:auto; font-weight:bold; color:#333; }
-
 #btnToggleStats, #btnPhoto { position:absolute; z-index:1100; padding:8px 12px; background:#0074D9; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; max-width:280px; }
 #btnToggleStats { top: calc(50px + 140px); left:10px; }
 #btnPhoto { top: calc(50px + 140px); right:10px; }
-
 #stats { position:absolute; bottom:5px; left:50%; transform:translateX(-50%); max-width:90%; width:600px; background: rgba(255,255,255,0.95); border-radius:8px; padding:10px 12px; font-family: Arial,sans-serif; z-index:1200; box-shadow:0 2px 8px rgba(0,0,0,0.2); overflow-x:auto; display:none; }
 #stats table { width:100%; border-collapse:collapse; text-align:center; }
 #stats table th, #stats table td { border:1px solid #ddd; padding:6px; font-size:12px; }
 @media screen and (max-width:600px){ #stats table th, #stats table td { font-size:10px; padding:4px; } }
-
 #label-left, #label-right { position:absolute; bottom:80px; padding:5px 12px; font-size:14px; font-weight:bold; background: rgba(255,255,255,0.9); border-radius:3px; pointer-events:none; white-space:nowrap; z-index:1000; }
 #label-left { left:10px; } #label-right { right:10px; }
-
 .mapboxgl-compare .mapboxgl-map canvas { transition: opacity 0.3s ease; }
 html, body, #container, #before, #after { overflow:hidden !important; }
 </style>
@@ -90,9 +84,9 @@ const layersApres = [
 
 let popup = null;
 
-// Ajouter couche
+// Ajouter couches
 async function addLayer(info){
-  try{
+  try {
     const resp = await fetch(info.source+'.geojson');
     const geojson = await resp.json();
     info.data = geojson;
@@ -139,30 +133,24 @@ async function loadAllLayers(){
 
 // Appliquer visibilité
 function applyLayerVisibility(layerObj){
-  const mapsToUpdate = [];
-
-  // Couche avant
-  if(layersAvant.includes(layerObj) || layerObj.label==='Sites arborés existants avant 2020'){
-    mapsToUpdate.push(beforeMap, afterMap);
-
-    if(layerObj.label==='Sites arborés existants avant 2020'){
-      const apres3 = layersApres.find(l=>l.id==='apres3-layer');
-      if(apres3){
-        apres3.visible = !layerObj.visible; // inverse pour toggle
-        applyLayerVisibility(apres3);
-      }
+  if(layerObj.label==='Sites arborés existants avant 2020'){
+    // la couche avant
+    if(beforeMap.getLayer(layerObj.id)) beforeMap.setLayoutProperty(layerObj.id,'visibility',layerObj.visible?'visible':'none');
+    // apres3-layer dans after
+    const apres3 = layersApres.find(l=>l.id==='apres3-layer');
+    if(apres3){
+      apres3.visible = !layerObj.visible;
+      if(afterMap.getLayer(apres3.id)) afterMap.setLayoutProperty(apres3.id,'visibility',apres3.visible?'visible':'none');
     }
+  } else {
+    if(layerObj.map.getLayer(layerObj.id)) layerObj.map.setLayoutProperty(layerObj.id,'visibility',layerObj.visible?'visible':'none');
   }
 
-  if(layersApres.includes(layerObj)) mapsToUpdate.push(afterMap);
-
-  mapsToUpdate.forEach(map=>{
-    if(map.getLayer(layerObj.id)) map.setLayoutProperty(layerObj.id, 'visibility', layerObj.visible?'visible':'none');
-    if(map.getLayer(layerObj.id+'-label')){
-      const labelVisible = layerObj.visible && map.getZoom()>=15?'visible':'none';
-      map.setLayoutProperty(layerObj.id+'-label', labelVisible);
-    }
-  });
+  // Labels
+  if(layerObj.map.getLayer(layerObj.id+'-label')){
+    const labelVisible = layerObj.visible && layerObj.map.getZoom()>=15?'visible':'none';
+    layerObj.map.setLayoutProperty(layerObj.id+'-label',labelVisible);
+  }
 }
 
 // Légende avec gros yeux SVG
@@ -173,46 +161,29 @@ function createLegend(){
 
   allLayers.forEach(l=>{
     if(!l.data) return;
-
-    const item=document.createElement('div');
-    item.style.display='flex'; item.style.alignItems='center'; item.style.margin='4px 0';
-
-    const createEye=(pathD)=>{
+    const item=document.createElement('div'); item.style.display='flex'; item.style.alignItems='center'; item.style.margin='4px 0';
+    const createEye = (pathD)=>{
       const eye=document.createElementNS('http://www.w3.org/2000/svg','svg');
-      eye.setAttribute('width','24'); eye.setAttribute('height','24'); eye.setAttribute('viewBox','0 0 24 24');
-      eye.style.cursor='pointer'; eye.style.marginRight='6px'; eye.style.fill='#000';
-      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-      path.setAttribute('d',pathD);
-      eye.appendChild(path);
-      return eye;
+      eye.setAttribute('width','24'); eye.setAttribute('height','24'); eye.setAttribute('viewBox','0 0 24 24'); eye.style.cursor='pointer'; eye.style.marginRight='6px'; eye.style.fill='#000';
+      const path=document.createElementNS('http://www.w3.org/2000/svg','path'); path.setAttribute('d',pathD); eye.appendChild(path); return eye;
     };
-
     const eyeOpenPath='M12 4.5C7.305 4.5 3.135 7.364 1 12c2.135 4.636 6.305 7.5 11 7.5s8.865-2.864 11-7.5c-2.135-4.636-6.305-7.5-11-7.5zm0 13c-3.038 0-5.5-2.462-5.5-5.5S8.962 6.5 12 6.5s5.5 2.462 5.5 5.5-2.462 5.5-5.5 5.5zm0-9a3.5 3.5 0 100 7 3.5 3.5 0 000-7z';
     const eyeClosedPath='M2.1 3L1 4.1l3.9 3.9C2.5 9.9 1.1 11.8 1 12c2.135 4.636 6.305 7.5 11 7.5 1.91 0 3.74-.5 5.34-1.36l3.66 3.66 1.1-1.1L2.1 3zM12 17c-3.038 0-5.5-2.462-5.5-5.5 0-1.12.37-2.15.99-2.98l7.49 7.49c-.83.62-1.86.99-2.98.99zM12 6.5c2.76 0 5 2.24 5 5 0 .66-.07 1.3-.21 1.91l-6.7-6.7C10.7 6.57 11.34 6.5 12 6.5z';
-
-    const eyeOpen=createEye(eyeOpenPath);
-    const eyeClosed=createEye(eyeClosedPath); eyeClosed.style.display='none';
-
+    const eyeOpen=createEye(eyeOpenPath); const eyeClosed=createEye(eyeClosedPath); eyeClosed.style.display='none';
     l.eyeOpen=eyeOpen; l.eyeClosed=eyeClosed;
-
     const toggleLayer=()=>{
       l.visible=!l.visible;
       l.eyeOpen.style.display=l.visible?'inline':'none';
       l.eyeClosed.style.display=l.visible?'none':'inline';
       applyLayerVisibility(l);
     };
-
-    eyeOpen.addEventListener('click', toggleLayer);
-    eyeClosed.addEventListener('click', toggleLayer);
-
+    eyeOpen.addEventListener('click',toggleLayer);
+    eyeClosed.addEventListener('click',toggleLayer);
     const colorBox=document.createElement('span'); colorBox.className='color-box'; colorBox.style.backgroundColor=l.color;
-
     item.appendChild(eyeOpen); item.appendChild(eyeClosed); item.appendChild(colorBox); 
     item.appendChild(document.createTextNode(l.label));
-
     const countSpan=document.createElement('span'); countSpan.className='count'; countSpan.textContent=l.totalCount;
     item.appendChild(countSpan);
-
     legendDiv.appendChild(item);
   });
 }
@@ -232,8 +203,9 @@ compare.setSlider(sliderLeft);
 
 btnToggleStats.addEventListener('click', ()=>{
   statsVisible=!statsVisible;
-  if(statsVisible){ statsDiv.style.display='block'; btnToggleStats.textContent='Masquer les chiffres'; compare.setSlider(sliderRight);}
-  else{ statsDiv.style.display='none'; btnToggleStats.textContent='Afficher les chiffres'; compare.setSlider(sliderLeft);}
+  statsDiv.style.display=statsVisible?'block':'none';
+  btnToggleStats.textContent=statsVisible?'Masquer les chiffres':'Afficher les chiffres';
+  compare.setSlider(statsVisible?sliderRight:sliderLeft);
 });
 
 // Photo aérienne
@@ -242,10 +214,8 @@ btnPhoto.addEventListener('click',()=>{
   photoVisible=!photoVisible;
   const styleURL=photoVisible?'mapbox://styles/mapbox/satellite-streets-v12':'mapbox://styles/mapbox/dark-v11';
   afterMap.setStyle(styleURL); beforeMap.setStyle(styleURL);
-
   afterMap.once('styledata',()=>{ loadAllLayers(); [...layersAvant,...layersApres].forEach(l=>applyLayerVisibility(l)); });
   beforeMap.once('styledata',()=>{ loadAllLayers(); [...layersAvant,...layersApres].forEach(l=>applyLayerVisibility(l)); });
-
   btnPhoto.textContent=photoVisible?'Plan noir et blanc':'Photo aérienne';
   btnPhoto.style.background='#0074D9';
 });
