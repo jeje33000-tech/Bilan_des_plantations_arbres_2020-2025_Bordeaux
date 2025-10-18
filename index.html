@@ -12,7 +12,7 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 #before, #after { position:absolute; top:0; bottom:0; width:100%; }
 .mapboxgl-ctrl-top-right { top: 60px !important; }
 #header { position:absolute; top:0; left:0; right:0; background:#77c803; color:white; font-weight:bold; font-size:18px; line-height:36px; text-align:center; z-index:1500; user-select:none; }
-.legend { position:absolute; top:50px; left:10px; background: rgba(255,255,255,0.9); white-space: wrap; width:320px; padding:5px 5px; border-radius:5px; font-size:12px; z-index:1000; max-width:320px;height: 200px; }
+.legend { position:absolute; top:50px; left:10px; background: rgba(255,255,255,0.9); white-space: wrap; width:320px; padding:5px 5px; border-radius:5px; font-size:12px; z-index:1000; max-width:320px;height: 180px; }
 .legend div { display:flex; flex-wrap: wrap;align-items:center; margin:2px 0; }
 .legend div .layer-text {
   /*flex: 1;        occupe tout l’espace restant */
@@ -288,7 +288,7 @@ textDiv.style.marginRight = '5px';
   // Légende globale ajustée
   legendDiv.style.maxWidth = '90%'; // un peu plus large
   legendDiv.style.fontSize = '20px';
-  legendDiv.style.padding = '7px 15px'; // un peu plus de padding pour respirer
+  legendDiv.style.padding = '5px 5px'; // un peu plus de padding pour respirer
 }
 
 // Stats
@@ -332,6 +332,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
