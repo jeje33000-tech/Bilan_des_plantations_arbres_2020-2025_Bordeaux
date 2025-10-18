@@ -225,24 +225,31 @@ function createLegend() {
       eyeOpen.style.display = visible ? 'inline' : 'none';
       eyeClosed.style.display = visible ? 'none' : 'inline';
 
-      // Masquer/afficher la couche sur les deux cartes
-      [beforeMap, afterMap].forEach(map => {
-        map.setLayoutProperty(l.id, 'visibility', visible ? 'visible' : 'none');
+      // Couches avant : visible/masqué sur les deux cartes
+      if (layersAvant.includes(l) || l.label === 'Sites arborés existants avant 2020') {
+        [beforeMap, afterMap].forEach(map => {
+          map.setLayoutProperty(l.id, visible ? 'visible' : 'none');
+          const labelVisible = visible && map.getZoom() >= 15 ? 'visible' : 'none';
+          map.setLayoutProperty(l.id + '-label', labelVisible);
+        });
+      }
 
-        // Labels visibles seulement à partir du zoom 15
-        const labelVisible = visible && map.getZoom() >= 15 ? 'visible' : 'none';
-        map.setLayoutProperty(l.id + '-label', 'visibility', labelVisible);
-      });
+      // Couches après : visible/masqué uniquement sur afterMap
+      if (layersApres.includes(l)) {
+        afterMap.setLayoutProperty(l.id, visible ? 'visible' : 'none');
+        const labelVisible = visible && afterMap.getZoom() >= 15 ? 'visible' : 'none';
+        afterMap.setLayoutProperty(l.id + '-label', labelVisible);
+      }
     };
 
     eyeOpen.addEventListener('click', toggleLayer);
     eyeClosed.addEventListener('click', toggleLayer);
 
-    // Événement zoom pour les labels
+    // Événement zoom pour labels
     [beforeMap, afterMap].forEach(map => {
       map.on('zoom', () => {
-        const labelVisible = visible && map.getZoom() >= 15 ? 'visible' : 'none';
-        map.setLayoutProperty(l.id + '-label', 'visibility', labelVisible);
+        const showLabel = visible && map.getZoom() >= 15 ? 'visible' : 'none';
+        map.setLayoutProperty(l.id + '-label', showLabel);
       });
     });
 
@@ -329,6 +336,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom
 </script>
 </body>
 </html>
+
 
 
 
