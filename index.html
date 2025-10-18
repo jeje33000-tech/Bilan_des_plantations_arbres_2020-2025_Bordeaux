@@ -14,6 +14,9 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 #header { position:absolute; top:0; left:0; right:0; background:#77c803; color:white; font-weight:bold; font-size:18px; line-height:36px; text-align:center; z-index:1500; user-select:none; }
 .legend { position:absolute; top:50px; left:10px; background: rgba(255,255,255,0.9); white-space: wrap; width:315px; padding:3px 1px; border-radius:5px; font-size:12px; z-index:1000; max-width:315px; }
 .legend div { display:flex; flex-wrap: wrap;align-items:center; margin:2px 0; }
+.legend div .layer-text {
+  flex: 1;          /* occupe tout l’espace restant */
+  text-align: justify; /* justifie le texte */   
 .legend span.color-box { width:18px; height:14px; margin-right:6px; border:1px solid #555; flex-shrink:0; }
 .legend span.count { margin-left:auto; font-weight:bold; color:#333; }
 #btnToggleStats, #btnPhoto { position:absolute; z-index:1100; padding:8px 12px; background:#0074D9; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; max-width:280px; }
@@ -23,7 +26,7 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 #stats table { width:100%; border-collapse:collapse; text-align:center; }
 #stats table th, #stats table td { border:1px solid #ddd; padding:6px; font-size:12px; }
 @media screen and (max-width:600px){ #stats table th, #stats table td { font-size:10px; padding:4px; } }
-#label-left, #label-right { position:absolute; bottom:80px; padding:3px 2px; font-size:14px; font-weight:bold; background: rgba(255,255,255,0.9); border-radius:3px; pointer-events:none; white-space:nowrap; z-index:1000; }
+#label-left, #label-right { position:absolute; bottom:80px; padding:3px 2px; font-size:14px; font-weight:bold; background: rgba(255,255,255,0.7); border-radius:3px; pointer-events:none; white-space:nowrap; z-index:1000; }
 #label-left { left:5px; } #label-right { right:5px; }
    #label-left::before {
     content: '⬅';
@@ -207,7 +210,7 @@ function createLegend() {
     item.style.margin = '4px 0'; // un peu plus d'espace vertical
     item.style.flexWrap = 'nowrap';
     item.style.width = '100%';
-    item.style.fontSize = '13.5px';
+    item.style.fontSize = '14px';
     item.style.overflow = 'hidden';
     item.style.height = '28px'; // augmente la hauteur de ligne pour confort
 
@@ -261,7 +264,7 @@ function createLegend() {
     countSpan.className='count';
     countSpan.textContent = l.totalCount;
     countSpan.style.marginLeft = 'auto';
-    countSpan.style.fontSize = '13.5px';
+    countSpan.style.fontSize = '14.5px';
 
     item.appendChild(eyeOpen);
     item.appendChild(eyeClosed);
@@ -319,6 +322,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
