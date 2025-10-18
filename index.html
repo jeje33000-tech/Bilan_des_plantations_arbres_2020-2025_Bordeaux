@@ -48,57 +48,31 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
  /*   vertical-align: middle;*/
 
 
-.label {
+#label-left, #label-right {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(119, 200, 3, 0.75);
-  color: white;
-  padding: 8px 14px;
-  border-radius: 50px;
-  font-size: 15px;
-  font-weight: 600;
-  z-index: 1500;
+  bottom: 80px;
+  padding: 3px 5px;
+  font-size: 14px;
+  font-weight: bold;
+  background: rgba(0,0,0,0.5);
+  border-radius: 3px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
-  cursor: default;
+  gap: 5px;
+  z-index: 1000;
 }
 
-.label:hover {
-  background: rgba(119, 200, 3, 0.95);
-  transform: translateY(-50%) scale(1.05);
+#label-left { left: 5px; }
+#label-right { right: 5px; }
+
+
+#label-left svg, #label-right svg {
+  transition: transform 0.2s;
 }
 
-.label-left { left: 10px; }
-.label-right { right: 10px; }
-
-.label .icon {
-  width: 18px;
-  height: 18px;
-  stroke: white;
-  transition: stroke 0.3s;
+#label-left:hover svg, #label-right:hover svg {
+  transform: scale(1.2);
 }
-
-.label:hover .icon { stroke: #f1f1f1; }
-
-@media (max-width: 600px) {
-  .label {
-    font-size: 13px;
-    padding: 6px 10px;
-  }
-
-  .label .icon {
-    width: 16px;
-    height: 16px;
-  }
-}
-
-
-
-
 
 
 
@@ -144,19 +118,22 @@ html, body, #container, #before, #after { overflow:hidden !important; }
   </table>
 </div>
 
-<div class="label label-left">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-    <polyline points="15 18 9 12 15 6"></polyline>
+  
+<div id="label-left">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+    <path d="M14 7l-5 5 5 5V7z"/>
   </svg>
-  Avant
+  Avant 2020
 </div>
 
-<div class="label label-right">
-  Après
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-    <polyline points="9 18 15 12 9 6"></polyline>
+<div id="label-right">
+  Après 2020
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 17l5-5-5-5v10z"/>
   </svg>
 </div>
+
+
 
 
   
@@ -417,6 +394,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
