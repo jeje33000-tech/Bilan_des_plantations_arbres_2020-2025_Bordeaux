@@ -167,19 +167,19 @@ function createLegend() {
     item.style.display = 'flex';
     item.style.alignItems = 'center';
     item.style.margin = '4px 0';
-    item.style.flexWrap = 'nowrap';       // pas de retour à la ligne
+    item.style.flexWrap = 'nowrap';
     item.style.width = '100%';
-    item.style.fontSize = '16px';
+    item.style.fontSize = '14px';
     item.style.overflow = 'hidden';
 
-    // Création des yeux SVG avec mêmes dimensions
+    // Création des yeux SVG
     const createEye = (pathD) => {
       const eye = document.createElementNS('http://www.w3.org/2000/svg','svg');
-      eye.setAttribute('width','36'); 
-      eye.setAttribute('height','36'); 
+      eye.setAttribute('width','28'); 
+      eye.setAttribute('height','28'); 
       eye.setAttribute('viewBox','0 0 24 24');
       eye.style.cursor='pointer';
-      eye.style.marginRight='6px';
+      eye.style.marginRight='4px';
       eye.style.flexShrink = '0';
       const path = document.createElementNS('http://www.w3.org/2000/svg','path');
       path.setAttribute('d', pathD);
@@ -208,13 +208,13 @@ function createLegend() {
     eyeOpen.addEventListener('click', toggleLayer);
     eyeClosed.addEventListener('click', toggleLayer);
 
-    // carré couleur plus grand
+    // carré couleur
     const colorBox = document.createElement('span');
     colorBox.className='color-box';
     colorBox.style.backgroundColor = l.color;
-    colorBox.style.width = '28px';
-    colorBox.style.height = '20px';
-    colorBox.style.marginRight = '8px';
+    colorBox.style.width = '22px';
+    colorBox.style.height = '16px';
+    colorBox.style.marginRight = '6px';
     colorBox.style.flexShrink = '0';
 
     const textNode = document.createTextNode(l.label);
@@ -222,7 +222,7 @@ function createLegend() {
     countSpan.className='count';
     countSpan.textContent = l.totalCount;
     countSpan.style.marginLeft = 'auto';
-    countSpan.style.fontSize = '16px';
+    countSpan.style.fontSize = '14px';
 
     item.appendChild(eyeOpen);
     item.appendChild(eyeClosed);
@@ -232,6 +232,11 @@ function createLegend() {
 
     legendDiv.appendChild(item);
   });
+
+  // Ajuster largeur max du rectangle blanc
+  legendDiv.style.maxWidth = '95%';
+  legendDiv.style.fontSize = '14px';
+  legendDiv.style.padding = '8px 12px';
 }
 
 // Stats
@@ -275,6 +280,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
