@@ -187,7 +187,7 @@ function createLegend() {
     item.style.alignItems = 'center';
     item.style.margin = '2px 0';
 
-    // Icônes œil SVG modernes
+    // Fonction pour créer un œil SVG moderne
     const createEye = (pathD) => {
       const eye = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       eye.setAttribute('width', '16');
@@ -219,25 +219,34 @@ function createLegend() {
     item.appendChild(eyeClosed);
 
     let visible = true;
+
     const toggleLayer = () => {
       visible = !visible;
       eyeOpen.style.display = visible ? 'inline' : 'none';
       eyeClosed.style.display = visible ? 'none' : 'inline';
-      l.map.setLayoutProperty(l.id, 'visibility', visible ? 'visible' : 'none');
 
-      // gérer aussi les labels
-      if (l.map === afterMap && layersApres.includes(l)) {
-        l.map.setLayoutProperty(l.id + '-label', 'visibility', visible ? 'visible' : 'none');
-      }
-      if (l.map === beforeMap && layersAvant.includes(l)) {
-        l.map.setLayoutProperty(l.id + '-label', 'visibility', visible ? 'visible' : 'none');
-      }
+      // Masquer/afficher la couche sur les deux cartes
+      [beforeMap, afterMap].forEach(map => {
+        map.setLayoutProperty(l.id, 'visibility', visible ? 'visible' : 'none');
+
+        // Labels visibles seulement à partir du zoom 15
+        const labelVisible = visible && map.getZoom() >= 15 ? 'visible' : 'none';
+        map.setLayoutProperty(l.id + '-label', 'visibility', labelVisible);
+      });
     };
 
     eyeOpen.addEventListener('click', toggleLayer);
     eyeClosed.addEventListener('click', toggleLayer);
 
-    // couleur de la couche
+    // Événement zoom pour les labels
+    [beforeMap, afterMap].forEach(map => {
+      map.on('zoom', () => {
+        const labelVisible = visible && map.getZoom() >= 15 ? 'visible' : 'none';
+        map.setLayoutProperty(l.id + '-label', 'visibility', labelVisible);
+      });
+    });
+
+    // Couleur de la couche
     const colorBox = document.createElement('span');
     colorBox.className = 'color-box';
     colorBox.style.backgroundColor = l.color;
@@ -320,6 +329,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom
 </script>
 </body>
 </html>
+
 
 
 
