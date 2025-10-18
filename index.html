@@ -32,49 +32,20 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 #stats table { width:100%; border-collapse:collapse; text-align:center; }
 #stats table th, #stats table td { border:1px solid #ddd; padding:6px; font-size:12px; }
 @media screen and (max-width:600px){ #stats table th, #stats table td { font-size:10px; padding:4px; } }
-/*#label-left, #label-right { position:absolute; bottom:80px; padding:3px 2px; font-size:14px; font-weight:bold; background: rgba(255,255,255,0.7); border-radius:3px; pointer-events:none; white-space:nowrap; z-index:1000;display: flex; align-items: center;gap: 4px   ; }
+#label-left, #label-right { position:absolute; bottom:80px; padding:3px 2px; font-size:14px; font-weight:bold; background: rgba(255,255,255,0.7); border-radius:3px; pointer-events:none; white-space:nowrap; z-index:1000;display: flex; align-items: center;gap: 4px   ; }
 #label-left { left:5px; } #label-right { right:5px; }
    #label-left::before {
     content: '⬅';
     margin-right: -3px;
     font-size: 18px;  /* Ajuste la taille de la flèche */
-  /*  vertical-align: middle;*/
-  }*/
+    vertical-align: middle;
+  }
 
- /* #label-right::after {
+ #label-right::after {
     content: '➡';
     margin-left: -3px;
-    font-size: 18px;  /* Ajuste la taille de la flèche */
- /*   vertical-align: middle;*/
-
-
-#label-left, #label-right {
-  position: fixed;
-  bottom: 80px;
-  padding: 3px 5px;
-  font-size: 14px;
-  font-weight: bold;
-  background: rgba(0,0,0,0.5);
-  border-radius: 3px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  z-index: 5000;
-}
-
-#label-left { left: 5px; }
-#label-right { right: 5px; }
-
-
-#label-left svg, #label-right svg {
-  transition: transform 0.2s;
-}
-
-#label-left:hover svg, #label-right:hover svg {
-  transform: scale(1.2);
-}
-
-
+    font-size: 18px;  /*Ajuste la taille de la flèche */
+    vertical-align: middle;
 
 
 
@@ -123,34 +94,12 @@ html, body, #container, #before, #after { overflow:hidden !important; }
 
   
 
-<div id="container">
-  <div id="after"></div>
-  <div id="before"></div>
-</div>
-
-<!-- Labels hors du container -->
-<div id="label-left">
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-    <path d="M14 7l-5 5 5 5V7z"/>
-  </svg>
-  Avant 2020
-</div>
-
-<div id="label-right">
-  Après 2020
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-    <path d="M10 17l5-5-5-5v10z"/>
-  </svg>
-</div>
-
-
-
 
 
 
   
-<!--<div id="label-left">Avant 2020</div>-->
-<!--<div id="label-right">Après 2020</div>//-->
+<div id="label-left">Avant 2020</div>
+<div id="label-right">Après 2020</div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
@@ -406,6 +355,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
