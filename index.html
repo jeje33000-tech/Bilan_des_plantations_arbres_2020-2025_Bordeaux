@@ -59,7 +59,7 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
   display: flex;
   align-items: center;
   gap: 5px;
-  z-index: 2000;
+  z-index: 3000;
 }
 
 #label-left { left: 5px; }
@@ -121,7 +121,11 @@ html, body, #container, #before, #after { overflow:hidden !important; }
   </table>
 </div>
 
-  
+  <div id="container">
+  <div id="after"></div>
+  <div id="before"></div>
+</div>
+
 <div id="label-left">
   <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
     <path d="M14 7l-5 5 5 5V7z"/>
@@ -135,6 +139,7 @@ html, body, #container, #before, #after { overflow:hidden !important; }
     <path d="M10 17l5-5-5-5v10z"/>
   </svg>
 </div>
+
 
 
 
@@ -397,6 +402,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
