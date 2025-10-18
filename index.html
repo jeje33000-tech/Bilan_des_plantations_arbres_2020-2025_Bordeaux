@@ -133,16 +133,17 @@ async function loadAllLayers(){
 
 // Appliquer visibilité
 function applyLayerVisibility(layerObj){
-  if(layerObj.label==='Sites arborés existants avant 2020'){
-    // la couche avant
-    if(beforeMap.getLayer(layerObj.id)) beforeMap.setLayoutProperty(layerObj.id,'visibility',layerObj.visible?'visible':'none');
-    // apres3-layer dans after
-    const apres3 = layersApres.find(l=>l.id==='apres3-layer');
-    if(apres3){
-      apres3.visible = !layerObj.visible;
-      if(afterMap.getLayer(apres3.id)) afterMap.setLayoutProperty(apres3.id,'visibility',apres3.visible?'visible':'none');
-    }
-  } else {
+ if(layerObj.label==='Sites arborés existants avant 2020'){
+  // la couche avant
+  if(beforeMap.getLayer(layerObj.id)) beforeMap.setLayoutProperty(layerObj.id,'visibility',layerObj.visible?'visible':'none');
+  // apres3-layer dans after : même état que l’œil
+  const apres3 = layersApres.find(l=>l.id==='apres3-layer');
+  if(apres3){
+    apres3.visible = layerObj.visible;  // <-- même état que l’œil
+    if(afterMap.getLayer(apres3.id)) afterMap.setLayoutProperty(apres3.id,'visibility',apres3.visible?'visible':'none');
+  }
+}
+else {
     if(layerObj.map.getLayer(layerObj.id)) layerObj.map.setLayoutProperty(layerObj.id,'visibility',layerObj.visible?'visible':'none');
   }
 
@@ -229,3 +230,4 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
