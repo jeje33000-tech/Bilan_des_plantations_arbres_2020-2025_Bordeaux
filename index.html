@@ -208,15 +208,23 @@ btnToggleStats.addEventListener('click', ()=>{
 });
 
 // Bouton photo aérienne
-const btnPhoto=document.getElementById('btnPhoto');
-let photoVisible=false;
-btnPhoto.addEventListener('click', ()=>{
-  photoVisible=!photoVisible;
-  const styleURL = photoVisible ? 'mapbox://styles/mapbox/satellite-streets-v12' : 'mapbox://styles/mapbox/dark-v11';
+const btnPhoto = document.getElementById('btnPhoto');
+let photoVisible = false;
+
+btnPhoto.addEventListener('click', () => {
+  photoVisible = !photoVisible;
+  
+  const styleURL = photoVisible 
+    ? 'mapbox://styles/mapbox/satellite-streets-v12' 
+    : 'mapbox://styles/mapbox/dark-v11';
+    
   afterMap.setStyle(styleURL);
   beforeMap.setStyle(styleURL);
   afterMap.once('styledata', loadAllLayers);
   beforeMap.once('styledata', loadAllLayers);
+
+  // ✅ Changement du texte du bouton
+  btnPhoto.textContent = photoVisible ? 'Plan noir et blanc' : 'Photo aérienne';
 });
 
 // Labels
@@ -230,6 +238,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom
 </script>
 </body>
 </html>
+
 
 
 
