@@ -126,61 +126,47 @@ let popup = null;
 
 // --- AJOUT DU CONTOUR DE LA COMMUNE ---
 
-    async function addCommuneLayer() {
-    try {
-        const resp = await fetch('communebx.geojson');
-        const geojson = await resp.json();
+async function addCommuneLayer() {
+  try {
+    const resp = await fetch('communebx.geojson');
+    const geojson = await resp.json();
 
-        // BEFORE MAP
-        beforeMap.addSource('commune', { type: 'geojson', data: geojson });
-        beforeMap.addLayer({
-            id: 'commune-fill',
-            type: 'fill',
-            source: 'commune',
-            layout: {},
-            paint: {
-                'fill-color': '#ffffff',
-                'fill-opacity': 0,          // intérieur transparent
-            }
-        });
-        beforeMap.addLayer({
-            id: 'commune-outline',
-            type: 'line',
-            source: 'commune',
-            layout: {},
-            paint: {
-                'line-color': '#ffffff',     // contour blanc
-                'line-width': 2
-            }
-        });
+    // BEFORE MAP
+    beforeMap.addSource('commune-before', { type: 'geojson', data: geojson });
+    beforeMap.addLayer({
+      id: 'commune-fill-before',
+      type: 'fill',
+      source: 'commune-before',
+      paint: { 'fill-color': '#ffffff', 'fill-opacity': 0.1 } // intérieur blanc 10%
+    });
+    beforeMap.addLayer({
+      id: 'commune-outline-before',
+      type: 'line',
+      source: 'commune-before',
+      paint: { 'line-color': '#ffffff', 'line-width': 2 } // contour blanc
+    });
 
-        // AFTER MAP
-        afterMap.addSource('commune', { type: 'geojson', data: geojson });
-        afterMap.addLayer({
-            id: 'commune-fill',
-            type: 'fill',
-            source: 'commune',
-            layout: {},
-            paint: {
-                'fill-color': '#ffffff',
-                'fill-opacity': 0
-            }
-        });
-        afterMap.addLayer({
-            id: 'commune-outline',
-            type: 'line',
-            source: 'commune',
-            layout: {},
-            paint: {
-                'line-color': '#ffffff',
-                'line-width': 2
-            }
-        });
+    // AFTER MAP
+    afterMap.addSource('commune-after', { type: 'geojson', data: geojson });
+    afterMap.addLayer({
+      id: 'commune-fill-after',
+      type: 'fill',
+      source: 'commune-after',
+      paint: { 'fill-color': '#ffffff', 'fill-opacity': 0.1 } // intérieur blanc 10%
+    });
+    afterMap.addLayer({
+      id: 'commune-outline-after',
+      type: 'line',
+      source: 'commune-after',
+      paint: { 'line-color': '#ffffff', 'line-width': 2 } // contour blanc
+    });
 
-    } catch(err) {
-        console.error('Erreur couche commune:', err);
-    }
+  } catch(err) {
+    console.error('Erreur couche commune:', err);
+  }
 }
+
+
 
 
 
@@ -424,6 +410,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
