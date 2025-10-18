@@ -31,6 +31,17 @@ body,html { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
 #stats { position:absolute; bottom:5px; left:50%; transform:translateX(-50%); max-width:90%; width:600px; background: rgba(255,255,255,0.95); border-radius:8px; padding:10px 12px; font-family: Arial,sans-serif; z-index:1200; box-shadow:0 2px 8px rgba(0,0,0,0.2); overflow-x:auto; display:none; }
 #stats table { width:100%; border-collapse:collapse; text-align:center; }
 #stats table th, #stats table td { border:1px solid #ddd; padding:6px; font-size:12px; }
+  #stats table thead tr {
+  background-color: #77c803; /* vert comme la bannière */
+  color: white;              /* texte blanc */
+  font-weight: bold;
+}
+#stats table thead th {
+  padding: 6px;
+  font-size: 12px;
+  text-align: center;
+}
+
 @media screen and (max-width:600px){ #stats table th, #stats table td { font-size:10px; padding:4px; } }
 #label-left, #label-right { position:absolute; bottom:80px; padding:3px 2px; font-size:14px; font-weight:bold; background: rgba(255,255,255,0.7); border-radius:3px; pointer-events:none; white-space:nowrap; z-index:1000;display: flex; align-items: center;gap: 4px   ; }
 #label-left { left:5px; } #label-right { right:5px; }
@@ -402,6 +413,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
