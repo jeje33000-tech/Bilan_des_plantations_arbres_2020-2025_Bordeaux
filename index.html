@@ -216,10 +216,32 @@ function createLegend() {
 
     let visible = true;
 
-    const toggleLayer = () => {
-      visible = !visible;
-      eyeOpen.style.display = visible ? 'inline' : 'none';
-      eyeClosed.style.display = visible ? 'none' : 'inline';
+    // Stocker l'état visible dans chaque objet couche
+l.visible = true;
+l.eyeOpen = eyeOpen;
+l.eyeClosed = eyeClosed;
+
+const toggleLayer = (layerObj) => {
+  layerObj.visible = !layerObj.visible;
+  layerObj.eyeOpen.style.display = layerObj.visible ? 'inline' : 'none';
+  layerObj.eyeClosed.style.display = layerObj.visible ? 'none' : 'inline';
+
+  const mapsToUpdate = [];
+  if (layersAvant.includes(layerObj) || layerObj.label === 'Sites arborés existants avant 2020') mapsToUpdate.push(beforeMap, afterMap);
+  if (layersApres.includes(layerObj)) mapsToUpdate.push(afterMap);
+
+  mapsToUpdate.forEach(map => {
+    if (map.getLayer(layerObj.id)) map.setLayoutProperty(layerObj.id, 'visibility', layerObj.visible ? 'visible' : 'none');
+    if (map.getLayer(layerObj.id + '-label')) {
+      const labelVisible = layerObj.visible && map.getZoom() >= 15 ? 'visible' : 'none';
+      map.setLayoutProperty(layerObj.id + '-label', labelVisible);
+    }
+  });
+};
+
+eyeOpen.addEventListener('click', () => toggleLayer(l));
+eyeClosed.addEventListener('click', () => toggleLayer(l));
+
 
       // Déterminer sur quelles cartes agir
       const mapsToUpdate = [];
@@ -304,8 +326,20 @@ btnPhoto.addEventListener('click', () => {
     
   afterMap.setStyle(styleURL);
   beforeMap.setStyle(styleURL);
-  afterMap.once('styledata', loadAllLayers);
-  beforeMap.once('styledata', loadAllLayers);
+ afterMap.once('styledata', () => {
+  loadAllLayers();
+  [...layersAvant, ...layersApres].forEach(l => {
+    if (l.visible) toggleLayer(l); // applique l'état visible existant
+  });
+});
+
+beforeMap.once('styledata', () => {
+  loadAllLayers();
+  [...layersAvant, ...layersApres].forEach(l => {
+    if (l.visible) toggleLayer(l);
+  });
+});
+
 
   // ✅ Changement du texte et de la couleur
   if (photoVisible) {
@@ -328,6 +362,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({ showCompass:true, showZoom
 </script>
 </body>
 </html>
+
 
 
 
