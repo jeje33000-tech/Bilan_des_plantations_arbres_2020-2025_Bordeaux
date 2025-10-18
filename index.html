@@ -155,36 +155,80 @@ else {
 }
 
 // Légende avec gros yeux SVG
-function createLegend(){
-  const legendDiv=document.getElementById('legend');
-  legendDiv.innerHTML='';
-  const allLayers=[...layersAvant,...layersApres].filter(l=>l.label!=='Non plantées');
+function createLegend() {
+  const legendDiv = document.getElementById('legend');
+  legendDiv.innerHTML = '';
+  const allLayers = [...layersAvant, ...layersApres].filter(l => l.label !== 'Non plantées');
 
-  allLayers.forEach(l=>{
-    if(!l.data) return;
-    const item=document.createElement('div'); item.style.display='flex'; item.style.alignItems='center'; item.style.margin='4px 0';
-    const createEye = (pathD)=>{
-      const eye=document.createElementNS('http://www.w3.org/2000/svg','svg');
-      eye.setAttribute('width','24'); eye.setAttribute('height','24'); eye.setAttribute('viewBox','0 0 24 24'); eye.style.cursor='pointer'; eye.style.marginRight='6px'; eye.style.fill='#000';
-      const path=document.createElementNS('http://www.w3.org/2000/svg','path'); path.setAttribute('d',pathD); eye.appendChild(path); return eye;
+  allLayers.forEach(l => {
+    if (!l.data) return;
+
+    const item = document.createElement('div');
+    item.style.display = 'flex';
+    item.style.alignItems = 'center';
+    item.style.margin = '4px 0'; // même espace qu'avant
+
+    // Fonction pour créer les yeux SVG
+    const createEye = (pathD, visible) => {
+      const eye = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      eye.setAttribute('width', '32'); 
+      eye.setAttribute('height', '32'); 
+      eye.setAttribute('viewBox', '0 0 24 24');
+      eye.style.cursor = 'pointer';
+      eye.style.marginRight = '8px';
+      eye.style.fill = visible ? '#4CAF50' : '#888'; // vert si visible, gris si masqué
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', pathD);
+      eye.appendChild(path);
+      return eye;
     };
-    const eyeOpenPath='M12 4.5C7.305 4.5 3.135 7.364 1 12c2.135 4.636 6.305 7.5 11 7.5s8.865-2.864 11-7.5c-2.135-4.636-6.305-7.5-11-7.5zm0 13c-3.038 0-5.5-2.462-5.5-5.5S8.962 6.5 12 6.5s5.5 2.462 5.5 5.5-2.462 5.5-5.5 5.5zm0-9a3.5 3.5 0 100 7 3.5 3.5 0 000-7z';
-    const eyeClosedPath='M2.1 3L1 4.1l3.9 3.9C2.5 9.9 1.1 11.8 1 12c2.135 4.636 6.305 7.5 11 7.5 1.91 0 3.74-.5 5.34-1.36l3.66 3.66 1.1-1.1L2.1 3zM12 17c-3.038 0-5.5-2.462-5.5-5.5 0-1.12.37-2.15.99-2.98l7.49 7.49c-.83.62-1.86.99-2.98.99zM12 6.5c2.76 0 5 2.24 5 5 0 .66-.07 1.3-.21 1.91l-6.7-6.7C10.7 6.57 11.34 6.5 12 6.5z';
-    const eyeOpen=createEye(eyeOpenPath); const eyeClosed=createEye(eyeClosedPath); eyeClosed.style.display='none';
-    l.eyeOpen=eyeOpen; l.eyeClosed=eyeClosed;
-    const toggleLayer=()=>{
-      l.visible=!l.visible;
-      l.eyeOpen.style.display=l.visible?'inline':'none';
-      l.eyeClosed.style.display=l.visible?'none':'inline';
+
+    const eyeOpenPath = 'M12 4.5C7.305 4.5 3.135 7.364 1 12c2.135 4.636 6.305 7.5 11 7.5s8.865-2.864 11-7.5c-2.135-4.636-6.305-7.5-11-7.5zm0 13c-3.038 0-5.5-2.462-5.5-5.5S8.962 6.5 12 6.5s5.5 2.462 5.5 5.5-2.462 5.5-5.5 5.5zm0-9a3.5 3.5 0 100 7 3.5 3.5 0 000-7z';
+    const eyeClosedPath = 'M2.1 3L1 4.1l3.9 3.9C2.5 9.9 1.1 11.8 1 12c2.135 4.636 6.305 7.5 11 7.5 1.91 0 3.74-.5 5.34-1.36l3.66 3.66 1.1-1.1L2.1 3zM12 17c-3.038 0-5.5-2.462-5.5-5.5 0-1.12.37-2.15.99-2.98l7.49 7.49c-.83.62-1.86.99-2.98.99zM12 6.5c2.76 0 5 2.24 5 5 0 .66-.07 1.3-.21 1.91l-6.7-6.7C10.7 6.57 11.34 6.5 12 6.5z';
+
+    const eyeOpen = createEye(eyeOpenPath, l.visible);
+    const eyeClosed = createEye(eyeClosedPath, !l.visible);
+    eyeClosed.style.display = l.visible ? 'none' : 'inline';
+
+    l.eyeOpen = eyeOpen;
+    l.eyeClosed = eyeClosed;
+
+    const toggleLayer = () => {
+      l.visible = !l.visible;
+      l.eyeOpen.style.display = l.visible ? 'inline' : 'none';
+      l.eyeClosed.style.display = l.visible ? 'none' : 'inline';
+      // changer la couleur des yeux selon l'état
+      l.eyeOpen.style.fill = l.visible ? '#4CAF50' : '#888';
+      l.eyeClosed.style.fill = !l.visible ? '#4CAF50' : '#888';
       applyLayerVisibility(l);
     };
-    eyeOpen.addEventListener('click',toggleLayer);
-    eyeClosed.addEventListener('click',toggleLayer);
-    const colorBox=document.createElement('span'); colorBox.className='color-box'; colorBox.style.backgroundColor=l.color;
-    item.appendChild(eyeOpen); item.appendChild(eyeClosed); item.appendChild(colorBox); 
-    item.appendChild(document.createTextNode(l.label));
-    const countSpan=document.createElement('span'); countSpan.className='count'; countSpan.textContent=l.totalCount;
+
+    eyeOpen.addEventListener('click', toggleLayer);
+    eyeClosed.addEventListener('click', toggleLayer);
+
+    // carré couleur
+    const colorBox = document.createElement('span');
+    colorBox.className = 'color-box';
+    colorBox.style.backgroundColor = l.color;
+    colorBox.style.width = '22px';
+    colorBox.style.height = '18px';
+    colorBox.style.marginRight = '8px';
+    colorBox.style.flexShrink = '0';
+
+    // texte et compteur
+    const textNode = document.createTextNode(l.label);
+    const countSpan = document.createElement('span');
+    countSpan.className = 'count';
+    countSpan.textContent = l.totalCount;
+    countSpan.style.marginLeft = 'auto';
+    countSpan.style.fontSize = '14px'; // un peu plus grand
+
+    item.appendChild(eyeOpen);
+    item.appendChild(eyeClosed);
+    item.appendChild(colorBox);
+    item.appendChild(textNode);
     item.appendChild(countSpan);
+
     legendDiv.appendChild(item);
   });
 }
@@ -230,4 +274,5 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
