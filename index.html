@@ -142,10 +142,10 @@ const compare = new mapboxgl.Compare(afterMap, beforeMap, '#container', {
 
 // Couches
 const layersAvant = [
-  { map:beforeMap, id:'avant-layer', source:'avant', color:'#e1ffc7', label:'Sites arborés existants avant 2020', data:null, totalCount:0, visible:true }
+  { map:beforeMap, id:'avant-layer', source:'avant', color:'#e1fbda', label:'Sites arborés existants avant 2020', data:null, totalCount:0, visible:true }
 ];
 const layersApres = [
-  { map:afterMap, id:'apres1-layer', source:'apres1', color:'#ff84e2', label:'Nouveaux sites plantés ou en cours de réalisation', data:null, totalCount:0, visible:true },
+  { map:afterMap, id:'apres1-layer', source:'apres1', color:'#24a100', label:'Nouveaux sites plantés ou en cours de réalisation', data:null, totalCount:0, visible:true },
   { map:afterMap, id:'apres2-layer', source:'apres2', color:'#24ff00', label:'Sites densifiés ou renouvelés', data:null, totalCount:0, visible:true },
   { map:afterMap, id:'apres3-layer', source:'apres3', color:'#e1fbda', label:'Non plantées', data:null, totalCount:0, visible:true }
 ];
@@ -439,6 +439,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
