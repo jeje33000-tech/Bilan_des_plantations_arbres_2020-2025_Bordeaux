@@ -211,17 +211,7 @@ async function addLayer(info) {
       paint: { 'fill-color': info.color, 'fill-opacity': 1 }
     });
 
-    // ✅ Ajout du contour avec la même couleur et transparence
-    info.map.addLayer({
-      id: info.id + '-outline',
-      type: 'line',
-      source: info.source,
-      paint: {
-        'line-color': info.color,
-        'line-opacity': 0.7, // même transparence que le fill
-        'line-width': 1
-      }
-    });
+    
 
     // Highlight au clic (simplifié pour fluidité)
     info.map.addLayer({
@@ -451,6 +441,7 @@ beforeMap.addControl(new mapboxgl.NavigationControl({showCompass:true, showZoom:
 </script>
 </body>
 </html>
+
 
 
 
